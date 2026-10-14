@@ -24,8 +24,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements-dev.txt
-      # Exit code 5 means "no tests collected". Allowed until the first lesson lands.
-      - run: pytest || [ $? -eq 5 ]
+      - run: pytest
 
   build:
     needs: test

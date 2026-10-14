@@ -173,3 +173,42 @@ starlight-menu-button button {
 	box-shadow: none;
 	border: 1px solid var(--sl-color-gray-5);
 }
+
+/* Figures (ArrayFigure, ListFigure): a framed plate with a mono caption */
+.vd-figure {
+	margin-block: 1.5rem;
+	border: 1px solid var(--sl-color-gray-5);
+	background: var(--sl-color-black);
+	padding: 1rem 1rem 0.9rem;
+}
+.vd-figure__head {
+	margin-bottom: 0.9rem;
+	padding-bottom: 0.6rem;
+	border-bottom: 1px dashed var(--sl-color-gray-5);
+	font-family: var(--sl-font-mono);
+	font-size: var(--sl-text-xs);
+	letter-spacing: 0.02em;
+	color: var(--sl-color-gray-3);
+}
+.vd-figure__body {
+	overflow-x: auto;
+	padding-bottom: 0.1rem;
+}
+.vd-figure__note {
+	margin: 0.8rem 0 0;
+	font-size: var(--sl-text-sm);
+	color: var(--sl-color-gray-2);
+}
+.sl-markdown-content .vd-figure + .vd-figure {
+	margin-top: -0.5rem;
+}
+
+/* Trace tables: wrap a markdown table in <div class="vd-trace"> */
+.vd-trace td {
+	font-family: var(--sl-font-mono);
+	font-size: var(--sl-text-sm);
+}
+.vd-trace td:last-child {
+	font-family: var(--sl-font);
+	color: var(--sl-color-gray-2);
+}

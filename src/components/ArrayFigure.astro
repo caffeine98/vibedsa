@@ -1,0 +1,74 @@
+---
+// An array drawn as a row of cells, with index numbers above and pointer labels below.
+// Example: <ArrayFigure values={[2, 5, 8]} pointers={{ 0: 'lo', 2: 'hi' }} active={1} dimmed={[0]} />
+interface Props {
+	values: (number | string)[];
+	caption?: string;
+	note?: string;
+	/** index -> label shown under that cell, e.g. { 3: 'mid' } */
+	pointers?: Record<number, string>;
+	/** index of the cell to highlight */
+	active?: number;
+	/** indexes of cells that are out of play */
+	dimmed?: number[];
+}
+
+const { values, caption, note, pointers = {}, active, dimmed = [] } = Astro.props;
+---
+
+<figure class="vd-figure not-content">
+	{caption && <figcaption class="vd-figure__head">{caption}</figcaption>}
+	<div class="vd-figure__body">
+		<div class="vd-array" style={`--n: ${values.length}`}>
+			{values.map((_, i) => <span class="vd-array__idx">{i}</span>)}
+			{
+				values.map((v, i) => (
+					<span class:list={['vd-array__cell', { 'is-active': i === active, 'is-out': dimmed.includes(i) }]}>
+						{v}
+					</span>
+				))
+			}
+			{values.map((_, i) => <span class="vd-array__ptr">{pointers[i] ?? ''}</span>)}
+		</div>
+	</div>
+	{note && <p class="vd-figure__note" set:html={note} />}
+</figure>
+
+<style>
+	.vd-array {
+		display: grid;
+		grid-template-columns: repeat(var(--n), minmax(2.6rem, 1fr));
+		row-gap: 0.35rem;
+		text-align: center;
+		min-width: min-content;
+	}
+	.vd-array__idx,
+	.vd-array__ptr {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--sl-color-gray-3);
+	}
+	.vd-array__ptr {
+		color: var(--vd-mark);
+		font-weight: 600;
+	}
+	.vd-array__cell {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-lg);
+		padding-block: 0.55rem;
+		border: 1px solid var(--sl-color-gray-4);
+		margin-inline-start: -1px;
+		color: var(--sl-color-white);
+	}
+	.vd-array__cell.is-out {
+		color: var(--sl-color-gray-4);
+		background-image: repeating-linear-gradient(-45deg, transparent 0 5px, var(--vd-grid) 5px 6px);
+	}
+	.vd-array__cell.is-active {
+		color: var(--sl-color-black);
+		background: var(--vd-mark);
+		border-color: var(--vd-mark);
+	}
+</style>

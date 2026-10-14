@@ -1,0 +1,137 @@
+---
+title: Binary search
+description: Find a value in a sorted array by halving the search range each step.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/binary_search.py?raw';
+
+## What it is
+
+Binary search finds a value in a **sorted** array. Each step checks the middle item and throws away the half that can't hold the target.
+
+Checking every item one by one (linear search) takes up to `n` steps. Binary search takes about `log₂ n`. For a million items, that is 20 steps instead of a million.
+
+## How it works
+
+Keep two pointers, `lo` and `hi`, around the part of the array that might hold the target. Then repeat:
+
+1. Look at the middle item, `mid`.
+2. If it equals the target, you're done.
+3. If it is smaller, the target must be to the right. Move `lo` past `mid`.
+4. If it is bigger, the target must be to the left. Move `hi` before `mid`.
+
+Here is a search for `16`:
+
+<ArrayFigure
+	values={[2, 5, 8, 12, 16, 23, 38]}
+	caption="step 1 · lo = 0, hi = 6, mid = 3"
+	pointers={{ 0: 'lo', 3: 'mid', 6: 'hi' }}
+	active={3}
+	note="12 &lt; 16, so the target is to the right. Set lo = 4."
+/>
+
+<ArrayFigure
+	values={[2, 5, 8, 12, 16, 23, 38]}
+	caption="step 2 · lo = 4, hi = 6, mid = 5"
+	pointers={{ 4: 'lo', 5: 'mid', 6: 'hi' }}
+	active={5}
+	dimmed={[0, 1, 2, 3]}
+	note="23 &gt; 16, so the target is to the left. Set hi = 4."
+/>
+
+<ArrayFigure
+	values={[2, 5, 8, 12, 16, 23, 38]}
+	caption="step 3 · lo = 4, hi = 4, mid = 4"
+	pointers={{ 4: 'mid' }}
+	active={4}
+	dimmed={[0, 1, 2, 3, 5, 6]}
+	note="16 == 16. Found it at index 4."
+/>
+
+If the target is missing, `lo` ends up past `hi` and the loop stops. Here is a search for `20`:
+
+<div class="vd-trace">
+
+| step | lo | hi | mid | A[mid] | what happens |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 0 | 6 | 3 | 12 | 12 < 20, so lo = 4 |
+| 2 | 4 | 6 | 5 | 23 | 23 > 20, so hi = 4 |
+| 3 | 4 | 4 | 4 | 16 | 16 < 20, so lo = 5 |
+| – | 5 | 4 | | | lo > hi. Stop and return -1. |
+
+</div>
+
+### Variant: the first match
+
+With duplicates, plain binary search returns *a* match, not the *first* one. **Lower bound** fixes this. It returns the first index whose value is `>= target`.
+
+It never stops early. When it finds a match, it keeps searching to the left. This also tells you where to insert a missing value.
+
+<ArrayFigure
+	values={[1, 3, 3, 3, 9]}
+	caption="lower_bound(A, 3) = 1 · lower_bound(A, 5) = 4"
+	pointers={{ 1: '≥ 3', 4: '≥ 5' }}
+/>
+
+## Pseudocode
+
+```text title="Pseudocode"
+BINARY-SEARCH(A, target):
+    lo = 0
+    hi = A.length - 1
+    while lo <= hi:
+        mid = floor((lo + hi) / 2)
+        if A[mid] == target:
+            return mid
+        else if A[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+
+LOWER-BOUND(A, target):
+    lo = 0
+    hi = A.length          // one past the end
+    while lo < hi:
+        mid = floor((lo + hi) / 2)
+        if A[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid           // mid might be the answer
+    return lo
+```
+
+## Python
+
+<Code code={src} lang="python" title="binary_search.py" />
+
+## Complexity
+
+| Case | Cost | Why |
+| --- | --- | --- |
+| Best time | O(1) | The first `mid` is the target. |
+| Worst time | O(log n) | Each step halves the range. |
+| Space | O(1) | Only `lo`, `hi` and `mid`. A recursive version uses O(log n) stack space. |
+
+`lower_bound` always runs the full O(log n), since it never stops early.
+
+## Gotchas
+
+- **The input must be sorted.** On unsorted data, binary search gives wrong answers without any error.
+- **Match the loop to the updates.** `while lo <= hi` goes with `hi = mid - 1`. `while lo < hi` goes with `hi = mid`. Mixing them causes an infinite loop or skips an item.
+- **Duplicates.** The plain version returns any matching index. Use lower bound when you need the first one.
+- **Overflow in other languages.** `(lo + hi) // 2` is safe in Python. In Java or C++, `lo + hi` can overflow. Write `lo + (hi - lo) / 2` there.
+
+## In practice
+
+Python's `bisect` module does this for you:
+
+- `bisect.bisect_left(a, x)` is lower bound.
+- `bisect.bisect_right(a, x)` returns the first index with a value `> x`.
+- `bisect.insort(a, x)` inserts `x` and keeps `a` sorted. Finding the spot is O(log n), but inserting into a list is O(n).
+
+`x in my_list` is a linear search. Sorting first costs O(n log n). So binary search pays off when you search the same data many times.
+
+Binary search also works on questions, not only arrays. If a yes/no question flips from "no" to "yes" once as a number grows, binary search finds where it flips. Example: "What is the smallest speed that finishes the job in time?"

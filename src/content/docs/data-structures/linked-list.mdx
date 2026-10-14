@@ -1,0 +1,142 @@
+---
+title: Linked lists
+description: Singly and doubly linked lists. Nodes joined by pointers, with O(1) inserts at the ends.
+---
+
+import { Code, Tabs, TabItem } from '@astrojs/starlight/components';
+import ListFigure from '../../../components/ListFigure.astro';
+import singly from '../../../../python/dsa/linked_list.py?raw';
+import doubly from '../../../../python/dsa/doubly_linked_list.py?raw';
+
+## What it is
+
+A linked list stores items in **nodes**. Each node holds a value and a pointer to the next node. The list itself only keeps a pointer to the first node, the **head**. It often keeps one to the last node too, the **tail**.
+
+In a **doubly** linked list, each node also points to the node before it.
+
+Why use one? An array keeps items side by side, so inserting at the front shifts every item. That is O(n). A linked list only changes a few pointers, which is O(1). The cost: there is no indexing. To reach item `k`, you walk `k` nodes from the head.
+
+## How it works
+
+<ListFigure
+	values={[3, 7, 9]}
+	labels={{ 0: 'head', 2: 'tail' }}
+	caption="a singly linked list"
+	note="Each box is a node: a value, then a pointer (•) to the next node. The last node points to None."
+/>
+
+### Push to the front
+
+Make a new node. Point it at the old head. Then move `head` to the new node.
+
+<ListFigure
+	values={[1, 3, 7, 9]}
+	labels={{ 0: 'head', 3: 'tail' }}
+	active={0}
+	caption="after push_front(1)"
+	note="No other node moved. Only two pointers changed."
+/>
+
+### Remove a value
+
+Walk the list with two pointers: `node`, and `prev` one step behind it. When `node` holds the value, point `prev` past it.
+
+<ListFigure
+	values={[3, 7, 9]}
+	labels={{ 0: 'prev', 1: 'node' }}
+	active={1}
+	caption="remove(7) · before"
+/>
+
+<ListFigure
+	values={[3, 9]}
+	labels={{ 0: 'prev' }}
+	caption="remove(7) · after: prev.next = node.next"
+	note="Nothing points to the 7 node now. Python's garbage collector frees it."
+/>
+
+You need `prev` because a singly linked node can't look backward. Removing the head is a special case: there is no `prev`, so move `head` instead.
+
+### Doubly linked, with sentinels
+
+A doubly linked list can step both ways. That makes removing a node O(1): its neighbors are right there, so no walk is needed.
+
+<ListFigure
+	values={[3, 7, 9]}
+	doubly
+	sentinels
+	caption="a doubly linked list with sentinel nodes"
+	note="The dashed boxes are sentinels: empty nodes that are always present."
+/>
+
+The code below uses two **sentinels**: empty nodes that sit before the first item and after the last. Because they never go away, every real node has a neighbor on both sides. Insert and remove then work the same everywhere, with no checks for an empty list or the ends.
+
+## Pseudocode
+
+```text title="Pseudocode"
+PUSH-FRONT(list, value):
+    node = new Node(value)
+    node.next = list.head
+    list.head = node
+    if list.tail == None:          // list was empty
+        list.tail = node
+
+REMOVE(list, value):               // singly linked
+    prev = None
+    node = list.head
+    while node != None and node.value != value:
+        prev = node
+        node = node.next
+    if node == None:
+        return false               // not found
+    if prev == None:
+        list.head = node.next      // removing the head
+    else:
+        prev.next = node.next
+    if node == list.tail:
+        list.tail = prev
+    return true
+
+REMOVE-NODE(node):                 // doubly linked, with sentinels
+    node.prev.next = node.next
+    node.next.prev = node.prev
+```
+
+## Python
+
+<Tabs>
+	<TabItem label="Singly linked">
+		<Code code={singly} lang="python" title="linked_list.py" />
+	</TabItem>
+	<TabItem label="Doubly linked">
+		<Code code={doubly} lang="python" title="doubly_linked_list.py" />
+	</TabItem>
+</Tabs>
+
+## Complexity
+
+| Operation | Singly | Doubly | Why |
+| --- | --- | --- | --- |
+| Get item `k` | O(n) | O(n) | Walk from the head. |
+| Push front / back | O(1) | O(1) | Change a few pointers. Push back needs a tail pointer. |
+| Pop front | O(1) | O(1) | Move the head forward. |
+| Pop back | O(n) | O(1) | Singly must walk to find the node before the tail. |
+| Find a value | O(n) | O(n) | Walk until you find it. |
+| Remove a node you hold | O(n) | O(1) | Singly must walk to find the previous node. |
+
+Space is O(n). Each node stores one pointer (singly) or two (doubly) on top of its value.
+
+## Gotchas
+
+- **Link before you cut.** When inserting, set the new node's `next` first. If you overwrite the old pointer first, you lose the rest of the list.
+- **Keep the tail correct.** Removing the last node must move `tail`. Emptying the list must set it to `None`. A wrong `tail` is the most common linked list bug.
+- **Check for `None`.** Crashes happen at the edges: an empty list, the head, and the last node.
+- **Indexing in a loop is slow.** Getting item `i` for every `i` is O(n²). Walk the list once instead.
+
+## In practice
+
+Python has no built-in linked list. For most work, use a `list`.
+
+- Need fast adds and removes at **both ends**? Use `collections.deque`. It is a doubly linked list of blocks, so both ends are O(1).
+- An **LRU cache** is a hash map plus a doubly linked list. The map finds a node in O(1). The list moves it to the front in O(1). `collections.OrderedDict` is built on this idea.
+- Linked lists also live inside other structures, such as hash map buckets and graph adjacency lists. They are a common interview topic too: reversing a list, or finding a cycle.

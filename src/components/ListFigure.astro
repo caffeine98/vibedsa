@@ -1,0 +1,156 @@
+---
+// A linked list drawn as boxes and arrows.
+// Singly: [ 3 | • ]→[ 7 | • ]→ None     Doubly: [ • | 3 | • ]⇄[ • | 7 | • ]
+// Example: <ListFigure values={[3, 7, 9]} labels={{ 0: 'head', 2: 'tail' }} active={1} />
+interface Props {
+	values: (number | string)[];
+	doubly?: boolean;
+	/** draw empty sentinel nodes at both ends (doubly lists) */
+	sentinels?: boolean;
+	/** index -> label shown above that node, e.g. { 0: 'head' } */
+	labels?: Record<number, string>;
+	/** index of the node to highlight */
+	active?: number;
+	caption?: string;
+	note?: string;
+}
+
+const { values, doubly = false, sentinels = false, labels = {}, active, caption, note } = Astro.props;
+
+type Item =
+	| { kind: 'node'; value: string; label: string; active: boolean; sentinel: boolean }
+	| { kind: 'link' }
+	| { kind: 'end' };
+
+const nodes = values.map((v, i) => ({
+	kind: 'node' as const,
+	value: String(v),
+	label: labels[i] ?? '',
+	active: i === active,
+	sentinel: false,
+}));
+if (sentinels) {
+	const sentinel = (label: string) => ({ kind: 'node' as const, value: '', label, active: false, sentinel: true });
+	nodes.unshift(sentinel('head'));
+	nodes.push(sentinel('tail'));
+}
+
+const items: Item[] = [];
+nodes.forEach((node, i) => {
+	if (i > 0) items.push({ kind: 'link' });
+	items.push(node);
+});
+if (!doubly) items.push({ kind: 'link' }, { kind: 'end' });
+---
+
+<figure class="vd-figure not-content">
+	{caption && <figcaption class="vd-figure__head">{caption}</figcaption>}
+	<div class="vd-figure__body">
+		<div class="vd-list">
+			{
+				items.map((item) =>
+					item.kind === 'node' ? (
+						<div class="vd-list__item">
+							<span class="vd-list__label">{item.label}</span>
+							<span class:list={['vd-list__node', { 'is-active': item.active, 'is-sentinel': item.sentinel }]}>
+								{doubly && <span class="vd-list__ptr">•</span>}
+								<span class="vd-list__value">{item.value}</span>
+								<span class="vd-list__ptr">•</span>
+							</span>
+						</div>
+					) : item.kind === 'link' ? (
+						<div class="vd-list__item">
+							<span class="vd-list__label" />
+							<span class="vd-list__link" aria-hidden="true">{doubly ? '⇄' : '→'}</span>
+						</div>
+					) : (
+						<div class="vd-list__item">
+							<span class="vd-list__label" />
+							<span class="vd-list__end">None</span>
+						</div>
+					)
+				)
+			}
+		</div>
+	</div>
+	{note && <p class="vd-figure__note" set:html={note} />}
+</figure>
+
+<style>
+	.vd-list {
+		display: flex;
+		align-items: flex-end;
+		min-width: min-content;
+	}
+	.vd-list__item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.35rem;
+	}
+	.vd-list__label {
+		min-height: 1.2em;
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--vd-mark);
+	}
+	.vd-list__node {
+		display: flex;
+		height: 2.75rem;
+		border: 1px solid var(--sl-color-gray-4);
+		font-family: var(--sl-font-mono);
+		color: var(--sl-color-white);
+	}
+	.vd-list__value {
+		display: grid;
+		place-items: center;
+		min-width: 2.75rem;
+		padding-inline: 0.5rem;
+		font-size: var(--sl-text-lg);
+	}
+	.vd-list__ptr {
+		display: grid;
+		place-items: center;
+		width: 1.5rem;
+		border-inline-start: 1px solid var(--sl-color-gray-4);
+		color: var(--sl-color-gray-3);
+	}
+	.vd-list__ptr:first-child {
+		border-inline-start: none;
+		border-inline-end: 1px solid var(--sl-color-gray-4);
+	}
+	.vd-list__node.is-active {
+		border-color: var(--vd-mark);
+		background: var(--vd-mark);
+	}
+	.vd-list__node.is-active .vd-list__value,
+	.vd-list__node.is-active .vd-list__ptr {
+		color: var(--sl-color-black);
+		border-color: var(--sl-color-black);
+	}
+	.vd-list__node.is-sentinel {
+		border-style: dashed;
+		background-image: repeating-linear-gradient(-45deg, transparent 0 5px, var(--vd-grid) 5px 6px);
+	}
+	.vd-list__node.is-sentinel .vd-list__value {
+		min-width: 1.5rem;
+	}
+	.vd-list__link,
+	.vd-list__end {
+		display: grid;
+		place-items: center;
+		height: 2.75rem;
+		font-family: var(--sl-font-mono);
+		color: var(--sl-color-gray-3);
+	}
+	.vd-list__link {
+		padding-inline: 0.4rem;
+		font-size: var(--sl-text-lg);
+	}
+	.vd-list__end {
+		font-size: var(--sl-text-sm);
+	}
+</style>
