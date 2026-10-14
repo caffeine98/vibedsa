@@ -23,7 +23,10 @@ class DoublyLinkedList:
         self.tail.prev = self.head
         self.size = 0
 
-    def _insert_between(self, value: Any, before: DNode, after: DNode) -> DNode:
+    def _insert_between(
+        self, value: Any, before: DNode, after: DNode
+    ) -> DNode:
+        """Link a new node in between two neighbors. Used by both pushes."""
         node = DNode(value)
         node.prev = before
         node.next = after
@@ -33,9 +36,11 @@ class DoublyLinkedList:
         return node
 
     def push_front(self, value: Any) -> DNode:
+        """Add value at the front: between the head sentinel and item 1."""
         return self._insert_between(value, self.head, self.head.next)
 
     def push_back(self, value: Any) -> DNode:
+        """Add value at the back: between the last item and tail sentinel."""
         return self._insert_between(value, self.tail.prev, self.tail)
 
     def remove(self, node: DNode) -> Any:

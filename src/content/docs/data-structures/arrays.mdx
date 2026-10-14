@@ -1,0 +1,117 @@
+---
+title: Arrays
+description: Items stored side by side in one block of memory. Static and dynamic arrays, and why append is O(1) on average.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/dynamic_array.py?raw';
+
+## What it is
+
+An array stores items side by side in one block of memory. Every slot has the same size, so you can jump straight to any index.
+
+A **static** array has a fixed size. A **dynamic** array grows as you add items. Python's `list` is a dynamic array.
+
+## How it works
+
+### Indexing is O(1)
+
+To find `A[i]`, the computer does one calculation:
+
+```text
+address of A[i] = start of block + i × size of one slot
+```
+
+That takes the same time for `i = 0` and `i = 1,000,000`. This is the main reason arrays are everywhere.
+
+### Growing
+
+A dynamic array sets aside more slots than it uses. **Size** is how many items it holds. **Capacity** is how many slots the block has.
+
+<ArrayFigure
+	values={[3, 7, 9, 5]}
+	caption="size 4, capacity 4 · the block is full"
+	pointers={{ 3: 'last' }}
+/>
+
+The block can't grow in place, because the memory after it may already be in use. So when it is full, `append` gets a new block **twice as big**, copies every item over, then adds the new one:
+
+<ArrayFigure
+	values={[3, 7, 9, 5, 11, '', '', '']}
+	caption="after append(11) · size 5, capacity 8"
+	active={4}
+	dimmed={[5, 6, 7]}
+	note="The copy costs O(n). The next three appends need no copy at all."
+/>
+
+Doubling makes copies rare. Over `n` appends, the total copying adds up to less than `2n` items. So append is **O(1) amortized**: cheap on average, even though a single append is sometimes O(n).
+
+### Insert and delete in the middle
+
+Items must stay side by side, with no gaps. To insert at index `i`, every item from `i` onward shifts one slot right. Delete shifts them left.
+
+<ArrayFigure
+	values={[3, 4, 7, 9, 5, 11, '', '']}
+	caption="after insert(1, 4) · 7, 9, 5 and 11 each moved one slot right"
+	active={1}
+	dimmed={[6, 7]}
+/>
+
+The closer to the front, the more items move. Inserting at index 0 moves all of them.
+
+## Pseudocode
+
+```text title="Pseudocode"
+APPEND(A, value):
+    if A.size == A.capacity:
+        RESIZE(A, 2 * A.capacity)
+    A.slots[A.size] = value
+    A.size = A.size + 1
+
+RESIZE(A, new_capacity):
+    new_slots = new block of new_capacity slots
+    for i from 0 to A.size - 1:
+        new_slots[i] = A.slots[i]
+    A.slots = new_slots
+
+INSERT(A, i, value):
+    if A.size == A.capacity:
+        RESIZE(A, 2 * A.capacity)
+    for j from A.size down to i + 1:      // shift right, from the end
+        A.slots[j] = A.slots[j - 1]
+    A.slots[i] = value
+    A.size = A.size + 1
+```
+
+## Python
+
+`slots` is a Python list, but the code treats it as a fixed block. It never calls `append` on it. Growing always means making a new block and copying.
+
+<Code code={src} lang="python" title="dynamic_array.py" />
+
+## Complexity
+
+| Operation | Cost | Why |
+| --- | --- | --- |
+| Get or set `A[i]` | O(1) | One address calculation. |
+| Append | O(1) amortized | Usually one write. Sometimes an O(n) copy, but rarely. |
+| Pop from the end | O(1) | Nothing shifts. |
+| Insert or delete at `i` | O(n − i) | Every item after `i` shifts. At the front, that's O(n). |
+| Search for a value | O(n) | Check each item. Use [binary search](../../algorithms/binary-search/) if sorted. |
+
+Space is O(n). Right after a resize, up to half the slots are empty.
+
+## Gotchas
+
+- **The front is slow.** `my_list.insert(0, x)` and `my_list.pop(0)` shift every item. If you need the front, use a [deque](../queue/).
+- **Copied rows share data.** `grid = [[0] * 3] * 3` makes three references to the *same* row. Changing `grid[0][0]` changes every row. Write `[[0] * 3 for _ in range(3)]`.
+- **Negative indexes don't fail.** In Python, `a[-1]` is the last item. An off-by-one that makes an index `-1` quietly reads the wrong item instead of raising an error.
+- **Don't change a list while looping over it.** Removing items while iterating skips elements. Build a new list instead.
+
+## In practice
+
+- `list` is Python's dynamic array. It stores references to objects, which is why one list can hold mixed types.
+- **Strings** are arrays of characters, but immutable. `s += "x"` builds a new string every time, so doing it in a loop can cost O(n²). Collect the pieces in a list and call `"".join(pieces)` once.
+- For large amounts of numbers, `array.array` or NumPy store the raw values side by side. They use much less memory than a list of `int` objects.
+- Reach for an array first. Indexing is O(1), and scanning is fast because the items sit next to each other in memory. That makes it the right default for most problems.

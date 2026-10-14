@@ -1,0 +1,93 @@
+---
+title: Stack
+description: Last in, first out. Push and pop at one end in O(1), and the classic bracket-matching problem.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import StackFigure from '../../../components/StackFigure.astro';
+import src from '../../../../python/dsa/stack.py?raw';
+
+## What it is
+
+A stack holds items in a pile. You add and remove only at the top. The last item in is the first one out: **LIFO**.
+
+It has three operations:
+
+- **push** puts an item on top.
+- **pop** removes the top item and returns it.
+- **peek** returns the top item without removing it.
+
+A stack is a set of rules, not a memory layout. Anything that adds and removes at one end in O(1) can be a stack. That includes the end of an [array](../arrays/) or the head of a [linked list](../linked-list/).
+
+## How it works
+
+<StackFigure
+	caption="after push(3), push(7), push(9)"
+	frames={[{ label: '3' }, { label: '7' }, { label: '9', note: 'pop() returns this first' }]}
+/>
+
+### Example: matching brackets
+
+Is `([]{})` balanced? Every closing bracket must match the most recent unclosed opening bracket. "Most recent" is exactly what a stack's top gives you.
+
+Push each opening bracket. On a closing bracket, pop and check that the two match.
+
+<div class="vd-trace">
+
+| char | action | stack after |
+| --- | --- | --- |
+| `(` | push | `(` |
+| `[` | push | `( [` |
+| `]` | pop `[`, it matches | `(` |
+| `{` | push | `( {` |
+| `}` | pop `{`, it matches | `(` |
+| `)` | pop `(`, it matches | empty |
+
+</div>
+
+The stack ends empty, so the text is balanced.
+
+For `([)]`, the third character `)` pops `[`. They don't match, so the answer is no. If the stack is not empty at the end, some bracket was never closed, and the answer is also no.
+
+## Pseudocode
+
+```text title="Pseudocode"
+IS-BALANCED(text):
+    stack = empty stack
+    for each ch in text:
+        if ch is an opening bracket:
+            PUSH(stack, ch)
+        else if ch is a closing bracket:
+            if stack is empty:
+                return false
+            if POP(stack) does not match ch:
+                return false
+    return stack is empty
+```
+
+## Python
+
+The `Stack` class uses the end of a Python list as its top. Both `append` and `pop` work at the end, so neither shifts any items.
+
+<Code code={src} lang="python" title="stack.py" />
+
+## Complexity
+
+| Operation | Cost | Why |
+| --- | --- | --- |
+| Push | O(1) amortized | `list.append`. O(1) every time on a linked list. |
+| Pop, peek | O(1) | Work at the end only. |
+| `is_balanced` | O(n) time, O(n) space | One pass. In the worst case, every character is an opening bracket and gets pushed. |
+
+## Gotchas
+
+- **Check before you pop.** Popping an empty stack is an error. In bracket problems, an empty stack on a closing bracket means "not balanced", not a crash.
+- **Use the end of the list, not the front.** `insert(0, x)` and `pop(0)` work too, but each costs O(n).
+- **Check the stack at the end.** In `((`, every pop matched, but nothing was closed. An empty stack at the end is part of the answer.
+
+## In practice
+
+- In Python, a plain `list` with `append` and `pop` is the standard stack.
+- Stacks are behind undo, the browser back button, and the [call stack](../../foundations/recursion/) that runs recursive functions.
+- Depth-first search uses a stack. A recursive version uses the call stack instead.
+- Reach for a stack when the most recent item decides what happens next: nested structures, matching pairs, or backtracking.

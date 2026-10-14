@@ -1,0 +1,102 @@
+---
+title: Queue and deque
+description: First in, first out. A circular buffer gives O(1) at both ends. A deque adds and removes at either end.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/circular_queue.py?raw';
+
+## What it is
+
+A queue is a line. Items join at the back and leave from the front. The first item in is the first one out: **FIFO**.
+
+- **enqueue** adds an item at the back.
+- **dequeue** removes the front item and returns it.
+
+A **deque** ("deck", short for double-ended queue) lets you add and remove at **both** ends.
+
+## How it works
+
+The obvious version is a Python list: `append` to the back, `pop(0)` from the front. But `pop(0)` shifts every remaining item left. That makes each dequeue O(n).
+
+There are two ways to get O(1) at both ends:
+
+1. A [doubly linked list](../linked-list/). Both ends are a pointer change away.
+2. A **circular buffer**: an array where the front moves forward instead of the items moving back.
+
+### Circular buffer
+
+Keep a `head` index for the front item and a count of items. Dequeue just moves `head` forward. Nothing shifts.
+
+<ArrayFigure
+	values={['', '', 3, 4]}
+	caption="enqueue 1, 2, 3, 4, then dequeue twice · head = 2, size = 2"
+	pointers={{ 0: 'next', 2: 'head' }}
+	dimmed={[0, 1]}
+	note="Slots 0 and 1 are free again. The next item goes in slot (head + size) % 4 = 0."
+/>
+
+When the back reaches the end of the array, it wraps around to slot 0. The `%` (modulo) operator does the wrapping.
+
+<ArrayFigure
+	values={[5, '', 3, 4]}
+	caption="after enqueue(5)"
+	pointers={{ 0: 'tail', 1: 'next', 2: 'head' }}
+	active={0}
+	dimmed={[1]}
+	note="Read from head and wrap around: the queue is 3, 4, 5."
+/>
+
+When every slot is full, the queue copies its items into an array twice as big, front first, and starts again at `head = 0`. This is the same doubling as a [dynamic array](../arrays/).
+
+## Pseudocode
+
+```text title="Pseudocode"
+ENQUEUE(Q, item):
+    if Q.size == Q.capacity:
+        GROW(Q)
+    tail = (Q.head + Q.size) % Q.capacity
+    Q.slots[tail] = item
+    Q.size = Q.size + 1
+
+DEQUEUE(Q):
+    if Q.size == 0:
+        report an error
+    item = Q.slots[Q.head]
+    Q.head = (Q.head + 1) % Q.capacity
+    Q.size = Q.size - 1
+    return item
+```
+
+## Python
+
+<Code code={src} lang="python" title="circular_queue.py" />
+
+## Complexity
+
+| Operation | Cost | Why |
+| --- | --- | --- |
+| Enqueue | O(1) amortized | One write. Sometimes an O(n) copy to grow, but rarely. |
+| Dequeue, peek | O(1) | Move `head`. Nothing shifts. |
+| `list.pop(0)`, for comparison | O(n) | Every remaining item shifts left. |
+
+Space is O(n).
+
+## Gotchas
+
+- **`list.pop(0)` is O(n).** It's the most common queue mistake. Inside a loop over `n` items it makes the loop O(n²).
+- **Always wrap with `%`.** Forgetting it on either index walks off the end of the array.
+- **Full or empty?** If you track only `head` and `tail`, then `head == tail` could mean either. Keeping a `size` count, as this code does, avoids the problem.
+- **`queue.Queue` is for threads.** It adds locking, which makes it slower. For algorithms, use `collections.deque`.
+
+## In practice
+
+`collections.deque` is Python's deque. It is a doubly linked list of fixed-size blocks.
+
+- `append(x)` and `popleft()` use it as a queue.
+- `appendleft(x)` and `pop()` work on the other ends. All four are O(1).
+- `deque(maxlen=k)` keeps only the last `k` items. Old ones drop off the front automatically.
+- Indexing into the middle, `d[i]`, is O(n). If you need that often, use a list.
+
+Queues run breadth-first search, task schedulers, and buffers for streaming data. Reach for one when items must be handled in the order they arrived.

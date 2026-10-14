@@ -71,6 +71,8 @@ A doubly linked list can step both ways. That makes removing a node O(1): its ne
 
 The code below uses two **sentinels**: empty nodes that sit before the first item and after the last. Because they never go away, every real node has a neighbor on both sides. Insert and remove then work the same everywhere, with no checks for an empty list or the ends.
 
+That's why `push_front` and `push_back` are one line each in the code below. Adding at the front means inserting between the head sentinel and the first item. Adding at the back means inserting between the last item and the tail sentinel. Both call the same `_insert_between` helper.
+
 ## Pseudocode
 
 ```text title="Pseudocode"

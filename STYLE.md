@@ -30,6 +30,7 @@ Every lesson uses these sections, in this order. Skip one only if it adds nothin
 - Type hints on function signatures. Short docstrings.
 - Comments only where the code is not obvious.
 - Readable beats clever. No one-liners that hide the idea.
+- Keep lines in `python/dsa/` under 80 characters, so code blocks fit without scrolling.
 - Every module has tests in `python/tests/`, including edge cases: empty input, one item, duplicates, not found.
 
 ## Complexity

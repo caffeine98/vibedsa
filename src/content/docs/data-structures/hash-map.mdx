@@ -1,0 +1,96 @@
+---
+title: Hash map and hash set
+description: Key-value lookup in O(1) on average. Hash functions, buckets, collisions and resizing.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/hash_map.py?raw';
+
+## What it is
+
+A hash map stores **key → value** pairs. Given a key, it finds the value in O(1) time on average, no matter how many pairs it holds.
+
+A **hash set** is a hash map with keys only. It answers one question fast: "is this item in the set?"
+
+Python's `dict` is a hash map. `set` is a hash set.
+
+## How it works
+
+A hash map is an array of **buckets**. To find a key's bucket:
+
+1. A **hash function** turns the key into an integer. In Python, that's `hash(key)`.
+2. `% number_of_buckets` turns that integer into a bucket index.
+
+The same key always gives the same index. So a lookup goes straight to one bucket instead of scanning everything.
+
+### Collisions
+
+Two different keys can land in the same bucket. This is a **collision**. One common fix is **chaining**: each bucket holds a short list of pairs, and you scan just that list.
+
+Here are three keys in 8 buckets. Python hashes small integers to themselves, which keeps the math easy to follow:
+
+```text title="put(12), put(7), put(20) into 8 buckets"
+12 % 8 = 4      bucket 4: (12, …) → (20, …)    ← collision
+ 7 % 8 = 7      bucket 7: (7, …)
+20 % 8 = 4      every other bucket is empty
+```
+
+To get key `20`: go to bucket 4, then scan its list until a key equals `20`.
+
+### Resizing
+
+Chains must stay short, or lookups slow down. The **load factor** is items ÷ buckets. When it goes above a limit (0.75 here), the map doubles its bucket count. Then it re-inserts every pair, because `hash % buckets` changes when the bucket count changes.
+
+Resizing costs O(n), but like a [dynamic array](../arrays/), doubling makes it rare. Each insert is O(1) amortized.
+
+## Pseudocode
+
+```text title="Pseudocode"
+PUT(M, key, value):
+    bucket = M.buckets[hash(key) % M.buckets.length]
+    for each pair in bucket:
+        if pair.key == key:
+            pair.value = value          // key exists: replace
+            return
+    append (key, value) to bucket
+    M.size = M.size + 1
+    if M.size > 0.75 * M.buckets.length:
+        RESIZE(M, 2 * M.buckets.length)
+
+GET(M, key):
+    bucket = M.buckets[hash(key) % M.buckets.length]
+    for each pair in bucket:
+        if pair.key == key:
+            return pair.value
+    report "key not found"
+```
+
+## Python
+
+<Code code={src} lang="python" title="hash_map.py" />
+
+## Complexity
+
+| Operation | Average | Worst | Why |
+| --- | --- | --- | --- |
+| Get, put, remove | O(1) | O(n) | Average assumes a good hash function, so chains stay short. Worst case: every key lands in one bucket. |
+| Resize | O(1) amortized | O(n) | Doubling makes it rare. |
+| Iterate over all keys | O(n) | O(n) | Visit every bucket and pair. |
+
+Space is O(n).
+
+## Gotchas
+
+- **Keys must be hashable.** Lists, dicts and sets can change, so they can't be keys. Use a tuple or `frozenset` instead.
+- **Don't change a key after inserting it.** Its hash changes, so the map looks in the wrong bucket and can't find it.
+- **`__eq__` and `__hash__` go together.** Objects that are equal must have equal hashes. If a class defines `__eq__` alone, Python makes it unhashable.
+- **Sets have no order.** A `dict` keeps insertion order (Python 3.7+), but a `set` does not. String hashes also change between runs, so a set of strings may print in a different order each time.
+
+## In practice
+
+- `dict` and `set` are the tools. `collections.Counter` counts items. `collections.defaultdict` fills in missing keys with a default value.
+- Python's `dict` doesn't chain. It uses **open addressing**: on a collision, it tries another slot in the same array. The average cost is the same.
+- Hash maps turn many O(n²) problems into O(n):
+  - **Seen it before?** Keep a set of items you've visited. See the duplicate check on [Big-O](../../foundations/big-o/).
+  - **Count things.** `Counter(words)` counts every word in one pass.
+  - **Find a pair.** For "two numbers that sum to `t`", store each number in a dict. For each `x`, look up `t - x` in O(1).
