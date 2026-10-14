@@ -1,0 +1,106 @@
+---
+title: Union-Find
+description: Track which group each item belongs to. Merge groups and check "same group?" in almost O(1).
+---
+
+import { Code } from '@astrojs/starlight/components';
+import GraphFigure from '../../../components/GraphFigure.astro';
+import { forestNodes, forestEdges, highlightEdges } from '../../../data/graphs';
+import src from '../../../../python/dsa/union_find.py?raw';
+
+## What it is
+
+Union-Find (also called **disjoint set union**, or DSU) keeps items split into groups that don't overlap. It does two things fast:
+
+- **find(x):** which group is `x` in? The answer is one item that represents the group, called its **root**.
+- **union(a, b):** merge the group of `a` with the group of `b`.
+
+Two items are in the same group exactly when they have the same root. With two simple tricks, both operations are close to O(1).
+
+## How it works
+
+Each group is a small tree. Every item points to a **parent**. A root points to itself. To find an item's root, follow parent links up until you reach an item that points to itself.
+
+Start with A to F each in their own group. Then:
+
+```text
+union(A, B)    union(C, D)    union(B, D)    union(E, F)
+```
+
+<GraphFigure
+	nodes={forestNodes}
+	edges={forestEdges}
+	directed
+	caption="after the four unions · arrows point to each item's parent"
+	note="Two groups: root A holds A, B, C and D. Root E holds E and F."
+/>
+
+`union(B, D)` found the two roots, A and C, and pointed one at the other. Unions always link **roots**, never the items you passed in.
+
+### Trick 1: union by size
+
+When merging, hang the smaller tree under the root of the bigger one. A tree only gets taller when it merges with one at least as big. So every tree stays at most `log n` levels tall, and finds stay short.
+
+### Trick 2: path compression
+
+While `find` walks up, it re-points nodes so they're closer to the root. The next `find` on the same path is shorter. This code uses **path halving**: each node it passes is pointed at its grandparent.
+
+<GraphFigure
+	nodes={forestNodes}
+	edges={highlightEdges(
+		[{ from: 'B', to: 'A' }, { from: 'C', to: 'A' }, { from: 'D', to: 'A' }, { from: 'F', to: 'E' }],
+		['D-A']
+	)}
+	directed
+	caption="after find(D) · D now points straight at the root"
+	note="find(D) walked D → C → A, and pointed D at its grandparent A on the way."
+/>
+
+## Pseudocode
+
+```text title="Pseudocode"
+FIND(x):
+    while parent[x] != x:
+        parent[x] = parent[parent[x]]   // path halving
+        x = parent[x]
+    return x
+
+UNION(a, b):
+    ra = FIND(a)
+    rb = FIND(b)
+    if ra == rb:
+        return false                    // already in one group
+    if size[ra] < size[rb]:
+        swap ra and rb
+    parent[rb] = ra                     // smaller under bigger
+    size[ra] = size[ra] + size[rb]
+    return true
+```
+
+## Python
+
+<Code code={src} lang="python" title="union_find.py" />
+
+## Complexity
+
+| Operation | Cost | Why |
+| --- | --- | --- |
+| Find, union, connected | O(α(n)) amortized | With both tricks, trees stay almost flat. |
+| Build from `n` items | O(n) | Each item starts as its own group. |
+
+α(n) is the **inverse Ackermann** function. It grows so slowly that it's at most 4 for any `n` you'll ever use. Treat it as O(1). With union by size alone, each operation is O(log n).
+
+## Gotchas
+
+- **Compare roots, not items.** `a` and `b` are in the same group when `find(a) == find(b)`. Checking `parent[a] == parent[b]` is wrong once trees get deeper.
+- **Link roots in `union`.** Writing `parent[a] = b` instead of linking the two roots can split a group and lose items.
+- **Use a loop in `find`.** A recursive `find` can hit Python's recursion limit before the tricks have flattened the trees.
+- **No undo.** Union-Find can merge groups, but it can't split them. If you need to remove connections, you need a different structure.
+
+## In practice
+
+- **[Kruskal's minimum spanning tree](../../algorithms/mst/)** uses Union-Find to skip edges that would form a cycle.
+- **Cycle check in an undirected graph:** if `union(u, v)` returns `False` for an edge, `u` and `v` were already connected. That edge closes a cycle.
+- **Connected pieces from a stream of edges:** each new edge is one `union`, and `groups` is the current count of pieces.
+- It's also used for grouping items that are "the same" by some rule, like merging accounts that share an email.
+- Python has no built-in version. The class here is short enough to copy into a solution.

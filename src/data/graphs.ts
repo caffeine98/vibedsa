@@ -52,3 +52,41 @@ export function highlightEdges(edges: GraphEdgeSpec[], keys: string[]): GraphEdg
 	const has = (a: string, b: string) => keys.includes(`${a}-${b}`) || keys.includes(`${b}-${a}`);
 	return edges.map((e) => ({ ...e, active: has(e.from, e.to) }));
 }
+
+// Weighted undirected example for Dijkstra and minimum spanning tree.
+export const weightedNodes: GraphNodeSpec[] = [
+	{ id: 'A', x: 0, y: 110, notePos: 'nw' },
+	{ id: 'B', x: 120, y: 30 },
+	{ id: 'C', x: 120, y: 190, notePos: 'sw' },
+	{ id: 'D', x: 240, y: 30 },
+	{ id: 'E', x: 240, y: 190, notePos: 'se' },
+	{ id: 'F', x: 360, y: 110 },
+];
+export const weightedEdges: GraphEdgeSpec[] = [
+	{ from: 'A', to: 'B', weight: 4 },
+	{ from: 'A', to: 'C', weight: 2 },
+	{ from: 'B', to: 'C', weight: 1 },
+	{ from: 'B', to: 'D', weight: 5 },
+	{ from: 'C', to: 'D', weight: 8 },
+	{ from: 'C', to: 'E', weight: 10 },
+	{ from: 'D', to: 'E', weight: 2 },
+	{ from: 'D', to: 'F', weight: 6 },
+	{ from: 'E', to: 'F', weight: 3 },
+];
+
+// Union-Find forest after union(A,B), union(C,D), union(B,D), union(E,F).
+// Arrows point from each item to its parent.
+export const forestNodes: GraphNodeSpec[] = [
+	{ id: 'A', x: 120, y: 0 },
+	{ id: 'B', x: 40, y: 100 },
+	{ id: 'C', x: 200, y: 100 },
+	{ id: 'D', x: 200, y: 200 },
+	{ id: 'E', x: 330, y: 0 },
+	{ id: 'F', x: 330, y: 100 },
+];
+export const forestEdges: GraphEdgeSpec[] = [
+	{ from: 'B', to: 'A' },
+	{ from: 'C', to: 'A' },
+	{ from: 'D', to: 'C' },
+	{ from: 'F', to: 'E' },
+];

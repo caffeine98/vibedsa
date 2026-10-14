@@ -14,8 +14,10 @@ export interface GraphNodeSpec {
 	label?: string;
 	active?: boolean;
 	dim?: boolean;
-	/** small label at the node's upper right, e.g. a distance */
+	/** small label by the node, e.g. a distance */
 	note?: string | number;
+	/** which corner the note sits at (default 'ne', upper right) */
+	notePos?: 'ne' | 'nw' | 'se' | 'sw';
 }
 export interface GraphEdgeSpec {
 	from: string;
@@ -40,6 +42,18 @@ const GAP = 4; // space between an arrow tip and the box
 const PAD = 28; // room around the drawing for notes and weights
 
 const byId = new Map(nodes.map((n) => [n.id, n]));
+
+// Where a node's note goes, so it can dodge edges.
+const notePlace = (n: GraphNodeSpec) => {
+	const pos = n.notePos ?? 'ne';
+	const east = pos.endsWith('e');
+	const north = pos.startsWith('n');
+	return {
+		x: n.x + (east ? BOX / 2 + 3 : -BOX / 2 - 3),
+		y: north ? n.y - BOX / 2 - 2 : n.y + BOX / 2 + 12,
+		anchor: east ? 'start' : 'end',
+	};
+};
 const minX = Math.min(...nodes.map((n) => n.x)) - BOX / 2 - PAD;
 const minY = Math.min(...nodes.map((n) => n.y)) - BOX / 2 - PAD;
 const maxX = Math.max(...nodes.map((n) => n.x)) + BOX / 2 + PAD;
@@ -88,10 +102,10 @@ const arrowActive = `vd-arrow-active-${uid}`;
 			{
 				directed && (
 					<defs>
-						<marker id={arrow} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+						<marker id={arrow} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto">
 							<path class="vd-graph__tip" d="M0,0 L10,5 L0,10 z" />
 						</marker>
-						<marker id={arrowActive} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+						<marker id={arrowActive} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
 							<path class="vd-graph__tip is-active" d="M0,0 L10,5 L0,10 z" />
 						</marker>
 					</defs>
@@ -121,7 +135,7 @@ const arrowActive = `vd-arrow-active-${uid}`;
 						<rect x={n.x - BOX / 2} y={n.y - BOX / 2} width={BOX} height={BOX} />
 						<text x={n.x} y={n.y}>{n.label ?? n.id}</text>
 						{n.note !== undefined && (
-							<text class="vd-graph__note" x={n.x + BOX / 2 + 3} y={n.y - BOX / 2 - 2}>
+							<text class="vd-graph__note" x={notePlace(n).x} y={notePlace(n).y} text-anchor={notePlace(n).anchor}>
 								{n.note}
 							</text>
 						)}
@@ -180,7 +194,6 @@ const arrowActive = `vd-arrow-active-${uid}`;
 		fill: var(--vd-mark);
 		font-size: 12px;
 		font-weight: 600;
-		text-anchor: start;
 		dominant-baseline: auto;
 	}
 	.vd-graph__node.is-active rect {

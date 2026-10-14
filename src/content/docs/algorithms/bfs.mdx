@@ -89,7 +89,7 @@ SHORTEST-PATH(graph, start, goal):
 
 - **Mark nodes as seen when you add them, not when you take them.** Otherwise a node can be added several times before it's taken. In the trace above, D would be added by both B and C.
 - **Use `collections.deque`.** `list.pop(0)` is O(n), which makes BFS O(V²).
-- **"Shortest" means fewest edges.** If edges have different weights, BFS can give a longer path. Weighted graphs need Dijkstra's algorithm, covered in a later lesson.
+- **"Shortest" means fewest edges.** If edges have different weights, BFS can give a longer path. Weighted graphs need [Dijkstra's algorithm](../dijkstra/).
 - **Some nodes may be unreachable.** If the graph isn't connected, BFS only finds the start node's piece. Check for a missing goal before building a path.
 
 ## In practice

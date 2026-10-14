@@ -1,0 +1,111 @@
+---
+title: Dijkstra's algorithm
+description: Shortest paths in a graph with weighted edges. Always settle the closest node next, using a heap.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import GraphFigure from '../../../components/GraphFigure.astro';
+import { weightedNodes, weightedEdges, annotate, highlightEdges } from '../../../data/graphs';
+import src from '../../../../python/dsa/dijkstra.py?raw';
+
+## What it is
+
+Dijkstra's algorithm finds the shortest path from one start node to every other node in a **weighted** graph. "Shortest" means the smallest total weight, not the fewest edges.
+
+It only works when no edge has a negative weight.
+
+## How it works
+
+<GraphFigure
+	nodes={annotate(weightedNodes, { A: 0, B: 3, C: 2, D: 8, E: 10, F: 13 }, ['A'])}
+	edges={highlightEdges(weightedEdges, ['A-C', 'C-B', 'B-D', 'D-E', 'E-F'])}
+	caption="shortest distances from A · path to F highlighted"
+	note="Small orange numbers are final distances from A. The cheapest way to F costs 13."
+/>
+
+[BFS](../bfs/) would pick A → B → D → F, with only 3 edges. But it costs 4 + 5 + 6 = 15. Dijkstra's path has more edges and costs only 13.
+
+### The idea
+
+Keep a best-known distance for every node: 0 for the start, and infinity for the rest. Then repeat:
+
+1. Pick the unsettled node with the smallest best-known distance. Its distance is now **final**. Any other route would go through a node that's already at least as far away, and weights can't be negative.
+2. For each edge out of it, check if going through this node gives the neighbor a shorter distance. If it does, update the neighbor. This is called **relaxing** the edge.
+
+A [min-heap](../../data-structures/heap/) finds the closest unsettled node fast. When a node's distance improves, push a new entry instead of editing the old one. The old entry stays in the heap, so skip it when it comes out later.
+
+### Trace from A
+
+Heap entries are `(distance, node)`.
+
+<div class="vd-trace">
+
+| pop | result | updates | heap after |
+| --- | --- | --- | --- |
+| (0, A) | A = 0 is final | B = 4, C = 2 | (2,C) (4,B) |
+| (2, C) | C = 2 is final | B = 3 (was 4), D = 10, E = 12 | (3,B) (4,B) (10,D) (12,E) |
+| (3, B) | B = 3 is final | D = 8 (was 10) | (4,B) (8,D) (10,D) (12,E) |
+| (4, B) | old entry: skip | – | (8,D) (10,D) (12,E) |
+| (8, D) | D = 8 is final | E = 10 (was 12), F = 14 | (10,D) (10,E) (12,E) (14,F) |
+| (10, D) | old entry: skip | – | (10,E) (12,E) (14,F) |
+| (10, E) | E = 10 is final | F = 13 (was 14) | (12,E) (13,F) (14,F) |
+| (12, E) | old entry: skip | – | (13,F) (14,F) |
+| (13, F) | F = 13 is final | none | (14,F) |
+| (14, F) | old entry: skip | – | empty |
+
+</div>
+
+Each time a distance improves, also record the node it came from (its **parent**). Following parents back from F gives F ← E ← D ← B ← C ← A.
+
+### Why negative weights break it
+
+Take edges A → B with weight 2, A → C with weight 3, and C → B with weight −2. Dijkstra settles B at distance 2, because it's the closest. But A → C → B costs 3 − 2 = 1. Settled distances are meant to be final, and a negative edge can still lower them later. The code raises an error if it sees a negative weight.
+
+For graphs with negative weights, use the **Bellman-Ford** algorithm. It's slower: O(V · E).
+
+## Pseudocode
+
+```text title="Pseudocode"
+DIJKSTRA(graph, start):
+    dist = { start: 0 }                 // missing means infinity
+    heap = [(0, start)]
+    done = empty set
+    while heap is not empty:
+        (d, node) = POP-MIN(heap)
+        if node in done:
+            continue                    // old entry
+        add node to done
+        for each (neighbor, weight) of node:
+            if d + weight < dist[neighbor]:
+                dist[neighbor] = d + weight
+                parent[neighbor] = node
+                PUSH(heap, (d + weight, neighbor))
+    return dist, parent
+```
+
+## Python
+
+The graph is an adjacency list of `(neighbor, weight)` pairs.
+
+<Code code={src} lang="python" title="dijkstra.py" />
+
+## Complexity
+
+| | Cost | Why |
+| --- | --- | --- |
+| Time | O((V + E) log V) | Every edge can push one heap entry, and each push or pop is O(log V). |
+| Space | O(V + E) | Distances, parents, and the heap, which can hold one entry per edge. |
+
+## Gotchas
+
+- **No negative weights.** You get wrong answers, with no error. This code checks first.
+- **Skip old heap entries.** Without the `done` check, a node is processed again each time an old entry comes out. The answer stays right, but the work goes up.
+- **Ties in the heap compare nodes.** When two distances are equal, Python compares the nodes next. If your nodes can't be compared, add a counter: `(dist, counter, node)`.
+- **Equal weights? Use BFS.** If every edge costs the same, BFS gives the same answer in O(V + E), with no heap.
+
+## In practice
+
+- Map routing, network routing, and many "cheapest way to get from X to Y" problems are shortest-path problems.
+- Game pathfinding often uses **A\***: Dijkstra plus an estimate of the distance left, which points the search toward the goal.
+- To find the shortest path to just one goal, you can stop as soon as the goal is settled.
+- `networkx.dijkstra_path` (third-party) does this for you. `heapq` is all you need to write it yourself.

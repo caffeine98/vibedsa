@@ -1,0 +1,105 @@
+---
+title: Minimum spanning tree
+description: Connect every node using the edges with the smallest total weight. Kruskal's and Prim's algorithms.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import GraphFigure from '../../../components/GraphFigure.astro';
+import { weightedNodes, weightedEdges, highlightEdges } from '../../../data/graphs';
+import src from '../../../../python/dsa/mst.py?raw';
+
+## What it is
+
+Take a connected, undirected graph with weighted edges. A **spanning tree** is a set of edges that connects every node with no cycles. It always has exactly `V - 1` edges.
+
+A **minimum spanning tree** (MST) is the spanning tree with the smallest total weight. Think of the cheapest way to lay cables so every building is connected.
+
+## How it works
+
+<GraphFigure
+	nodes={weightedNodes}
+	edges={highlightEdges(weightedEdges, ['B-C', 'A-C', 'D-E', 'E-F', 'B-D'])}
+	caption="the minimum spanning tree · total weight 1 + 2 + 2 + 3 + 5 = 13"
+	note="5 edges connect all 6 nodes. No other choice of edges is cheaper."
+/>
+
+Two greedy algorithms find it. Both keep adding the cheapest edge that is still allowed.
+
+### Kruskal's algorithm
+
+Sort all edges by weight. Go through them from cheapest to most expensive. Add each edge unless its two ends are already connected, because then it would form a cycle. [Union-Find](../../data-structures/union-find/) answers "already connected?" in almost O(1).
+
+<div class="vd-trace">
+
+| edge | weight | already connected? | result |
+| --- | --- | --- | --- |
+| B–C | 1 | no | add |
+| A–C | 2 | no | add |
+| D–E | 2 | no | add |
+| E–F | 3 | no | add |
+| A–B | 4 | yes, through C | skip |
+| B–D | 5 | no | add: all 6 nodes joined |
+| D–F, C–D, C–E | 6, 8, 10 | yes | skip |
+
+</div>
+
+### Prim's algorithm
+
+Grow one tree from a start node. At each step, add the cheapest edge that leads from the tree to a node not in it yet. A [min-heap](../../data-structures/heap/) holds the edges leaving the tree.
+
+From A, Prim adds A–C (2), then C–B (1), B–D (5), D–E (2) and E–F (3). It's the same tree, with the same total of 13, built in a different order.
+
+### Why greedy works
+
+Split the nodes into any two groups. The cheapest edge that crosses between them is always safe to include in an MST. Both algorithms only ever add an edge like that. This rule is called the **cut property**.
+
+## Pseudocode
+
+```text title="Pseudocode"
+KRUSKAL(nodes, edges):
+    groups = UNION-FIND(nodes)
+    tree = empty list
+    for each edge (u, v, w) in edges, sorted by w:
+        if UNION(groups, u, v):         // false if already connected
+            append (u, v, w) to tree
+    return tree                         // V - 1 edges if connected
+
+PRIM(graph, start):
+    in_tree = { start }
+    heap = edges leaving start, as (w, u, v)
+    while heap is not empty:
+        (w, u, v) = POP-MIN(heap)
+        if v in in_tree:
+            continue
+        add v to in_tree
+        append (u, v, w) to tree
+        PUSH every edge from v to a node not in in_tree
+    return tree
+```
+
+## Python
+
+<Code code={src} lang="python" title="mst.py" />
+
+## Complexity
+
+| Algorithm | Time | Why |
+| --- | --- | --- |
+| Kruskal | O(E log E) | Sorting the edges. Union-Find adds almost nothing. |
+| Prim | O(E log V) | Each edge can enter the heap once. Each heap step is O(log V). |
+
+Both use O(V + E) space. They're close in practice. Kruskal is simple when you already have an edge list. Prim fits an adjacency list.
+
+## Gotchas
+
+- **An MST is not a set of shortest paths.** Take a triangle with A–B = 2, B–C = 2 and A–C = 3. The MST uses A–B and B–C, total 4. Its path from A to C costs 4, but the direct edge costs 3. For shortest paths, use [Dijkstra](../dijkstra/).
+- **The graph must be connected.** If it isn't, no spanning tree exists. The code returns `None`. Kruskal without that check gives a separate tree for each piece, called a **spanning forest**.
+- **It's for undirected graphs.** The directed version is a different, harder problem.
+- **Ties allow several MSTs.** When edges share a weight, different trees can tie for the minimum. The total weight is the same either way.
+- **Negative weights are fine.** Unlike Dijkstra, both algorithms only compare weights, so negative edges cause no trouble.
+
+## In practice
+
+- Network design: the cheapest way to connect buildings, cities or circuit pins.
+- Clustering: build the MST, then delete its few most expensive edges. The pieces left are the clusters.
+- `networkx.minimum_spanning_tree` (third-party) does this for you.
