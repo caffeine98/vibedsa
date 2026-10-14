@@ -1,10 +1,17 @@
 ---
 // Replaces Starlight's Hero. Used only on the home page.
 // The figure is a real binary search step, not decoration.
+import { getCollection } from 'astro:content';
 import ArrayFigure from './ArrayFigure.astro';
+import { curriculum } from '../data/curriculum.mjs';
 
 const { data } = Astro.locals.starlightRoute.entry;
 const { title = data.title, tagline } = data.hero || {};
+
+// "Start reading" goes to the first written lesson in curriculum order.
+const written = new Set((await getCollection('docs')).map((entry) => entry.id));
+const first = curriculum.flatMap((s) => s.topics).find((t) => written.has(t.slug));
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <div class="vd-hero not-content">
@@ -12,6 +19,10 @@ const { title = data.title, tagline } = data.hero || {};
 		<p class="vd-kicker">Data structures &amp; algorithms · a field guide</p>
 		<h1 id="_top" set:html={title} />
 		{tagline && <p class="vd-tagline" set:html={tagline} />}
+		<div class="vd-actions">
+			{first && <a class="vd-btn vd-btn--primary" href={`${base}/${first.slug}/`}>Start reading: {first.title} →</a>}
+			<a class="vd-btn" href={`${base}/guide/`}>How to read this site</a>
+		</div>
 	</div>
 
 	<ArrayFigure
@@ -62,5 +73,31 @@ const { title = data.title, tagline } = data.hero || {};
 		max-width: 34ch;
 		font-size: var(--sl-text-lg);
 		color: var(--sl-color-gray-2);
+	}
+	.vd-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-top: 1.75rem;
+	}
+	.vd-btn {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-sm);
+		font-weight: 600;
+		padding: 0.6rem 1rem;
+		border: 1px solid var(--sl-color-gray-4);
+		color: var(--sl-color-white);
+		text-decoration: none;
+	}
+	.vd-btn:hover {
+		border-color: var(--vd-mark);
+	}
+	.vd-btn--primary {
+		background: var(--vd-mark);
+		border-color: var(--vd-mark);
+		color: var(--sl-color-black);
+	}
+	.vd-btn--primary:hover {
+		filter: brightness(1.1);
 	}
 </style>
