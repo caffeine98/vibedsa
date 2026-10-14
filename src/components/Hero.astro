@@ -2,6 +2,7 @@
 // Replaces Starlight's Hero. Used only on the home page.
 // The figure is a real binary search step, not decoration.
 import { getCollection } from 'astro:content';
+import AiNotice from './AiNotice.astro';
 import ArrayFigure from './ArrayFigure.astro';
 import { curriculum } from '../data/curriculum.mjs';
 
@@ -16,6 +17,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 <div class="vd-hero not-content">
 	<div class="vd-hero__text">
+		<AiNotice />
 		<p class="vd-kicker">Data structures &amp; algorithms · a field guide</p>
 		<h1 id="_top" set:html={title} />
 		{tagline && <p class="vd-tagline" set:html={tagline} />}

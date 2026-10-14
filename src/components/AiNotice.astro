@@ -1,0 +1,115 @@
+---
+// AI disclosure: a small button that opens a pop-up. It never opens by itself.
+---
+
+<button type="button" class="vd-notice-open not-content" aria-haspopup="dialog">
+	<span class="vd-notice-open__tag">AI</span>
+	This site is AI-generated. Read the disclosure
+</button>
+
+<dialog class="vd-notice not-content" aria-labelledby="vd-notice-title">
+	<p class="vd-notice__tag">AI disclosure</p>
+	<h2 id="vd-notice-title">This site is AI-generated</h2>
+	<p>
+		Most of this site was made with AI (Claude, by Anthropic). That includes the explanations, the code, the
+		figures and the design.
+	</p>
+	<p>
+		The Python code is tested, but AI can still get things wrong while sounding sure. Use this site as a study
+		aid, and check anything important against a second source.
+	</p>
+	<form method="dialog">
+		<button class="vd-notice__btn" autofocus>I understand</button>
+	</form>
+</dialog>
+
+<script>
+	const dialog = document.querySelector<HTMLDialogElement>('.vd-notice');
+	const openButton = document.querySelector<HTMLButtonElement>('.vd-notice-open');
+
+	if (dialog && openButton) {
+		openButton.addEventListener('click', () => dialog.showModal());
+		// The "I understand" button and the Escape key close it on their own.
+		dialog.addEventListener('click', (e) => {
+			if (e.target === dialog) dialog.close(); // click on the backdrop
+		});
+	}
+</script>
+
+<style>
+	.vd-notice-open {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0 0 1.5rem;
+		padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+		border: 1px solid var(--sl-color-gray-5);
+		background: var(--sl-color-black);
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-2);
+		text-align: start;
+		cursor: pointer;
+	}
+	.vd-notice-open:hover {
+		border-color: var(--vd-mark);
+		color: var(--sl-color-white);
+	}
+	.vd-notice-open__tag {
+		padding: 0.1rem 0.4rem;
+		background: var(--vd-mark);
+		color: var(--sl-color-black);
+		font-weight: 600;
+		letter-spacing: 0.08em;
+	}
+	.vd-notice {
+		margin: auto; /* Starlight's reset removes the default centering */
+		max-width: min(34rem, calc(100vw - 2rem));
+		padding: 1.5rem 1.5rem 1.25rem;
+		border: 1px solid var(--vd-mark);
+		border-top-width: 4px;
+		background: var(--sl-color-black);
+		color: var(--sl-color-gray-2);
+	}
+	.vd-notice::backdrop {
+		background: rgba(5, 10, 18, 0.7);
+	}
+	.vd-notice__tag {
+		margin: 0;
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--vd-mark);
+	}
+	h2 {
+		margin: 0.4rem 0 0.9rem;
+		font-family: var(--vd-font-display);
+		font-size: var(--sl-text-2xl);
+		font-weight: 600;
+		line-height: 1.2;
+		color: var(--sl-color-white);
+	}
+	p {
+		margin: 0 0 0.75rem;
+		line-height: 1.6;
+	}
+	form {
+		margin-top: 1.25rem;
+		text-align: end;
+	}
+	.vd-notice__btn {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-sm);
+		font-weight: 600;
+		padding: 0.6rem 1.1rem;
+		border: 1px solid var(--vd-mark);
+		background: var(--vd-mark);
+		color: var(--sl-color-black);
+		cursor: pointer;
+	}
+	.vd-notice__btn:hover {
+		filter: brightness(1.1);
+	}
+</style>

@@ -166,9 +166,10 @@ h1,
 }
 
 /* Mobile menu button: outlined square, not a filled circle */
-starlight-menu-button button {
+.sl-menu-button,
+.sl-menu-button:has(~ :popover-open) {
 	border-radius: 0;
-	background: transparent;
+	background: var(--sl-color-black);
 	color: var(--sl-color-white);
 	box-shadow: none;
 	border: 1px solid var(--sl-color-gray-5);
@@ -211,4 +212,13 @@ starlight-menu-button button {
 .vd-trace td:last-child {
 	font-family: var(--sl-font);
 	color: var(--sl-color-gray-2);
+}
+
+/* Previous / Next links: square, no shadow */
+.pagination-links a {
+	border-radius: 0;
+	box-shadow: none;
+}
+.pagination-links a:hover {
+	border-color: var(--vd-mark);
 }
