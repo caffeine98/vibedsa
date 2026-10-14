@@ -1,0 +1,175 @@
+/*
+ * VibeDSA theme.
+ * Dark mode: "blueprint" — deep navy, faint grid, amber ink.
+ * Light mode: "notebook" — warm paper, faint grid, vermilion ink.
+ * Square corners, thin rules, mono labels. No gradients, no shadows.
+ */
+
+:root {
+	--sl-font: 'IBM Plex Sans', sans-serif;
+	--sl-font-mono: 'IBM Plex Mono', monospace;
+	--vd-font-display: 'Fraunces Variable', Georgia, serif;
+
+	/* Dark: blueprint */
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #e6edf5;
+	--sl-color-gray-2: #c3cfdc;
+	--sl-color-gray-3: #8a9bb0;
+	--sl-color-gray-4: #56677d;
+	--sl-color-gray-5: #2b3b50;
+	--sl-color-gray-6: #142131;
+	--sl-color-black: #0c1622;
+
+	--sl-color-accent-low: #3b2a0e;
+	--sl-color-accent: #f2a33a;
+	--sl-color-accent-high: #fcd79e;
+
+	--vd-grid: rgba(140, 175, 215, 0.06);
+	--vd-mark: #f2a33a;
+
+	--sl-color-bg-nav: var(--sl-color-black);
+	--sl-color-bg-sidebar: var(--sl-color-black);
+
+	--sl-text-h1: 2.75rem;
+	--sl-line-height-headings: 1.1;
+}
+
+:root[data-theme='light'] {
+	/* Light: notebook */
+	--sl-color-white: #17140f;
+	--sl-color-gray-1: #2a261f;
+	--sl-color-gray-2: #3d382e;
+	--sl-color-gray-3: #625b4c;
+	--sl-color-gray-4: #918874;
+	--sl-color-gray-5: #cfc6b1;
+	--sl-color-gray-6: #ebe4d3;
+	--sl-color-gray-7: #f1ebdd;
+	--sl-color-black: #f7f3ea;
+
+	--sl-color-accent-low: #f7dccb;
+	--sl-color-accent: #c2410c;
+	--sl-color-accent-high: #8a2c06;
+
+	--vd-grid: rgba(90, 70, 40, 0.07);
+	--vd-mark: #c2410c;
+}
+
+/* Graph-paper background */
+body {
+	background-color: var(--sl-color-black);
+	background-image:
+		linear-gradient(var(--vd-grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--vd-grid) 1px, transparent 1px);
+	background-size: 24px 24px;
+}
+
+/* Square everything */
+:root {
+	--vd-radius: 0;
+}
+.sl-markdown-content :is(img, pre, figure, .expressive-code, table, aside),
+.sl-link-button,
+.starlight-aside,
+starlight-tabs [role='tab'],
+site-search button,
+.card {
+	border-radius: 0 !important;
+}
+
+/* Header and sidebar: rules instead of fills */
+header.header {
+	border-bottom: 1px solid var(--sl-color-hairline-light);
+}
+.site-title {
+	font-family: var(--sl-font-mono);
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: var(--sl-color-white);
+}
+#starlight__sidebar {
+	border-inline-end: 1px solid var(--sl-color-hairline-light);
+}
+.sidebar-content summary .group-label .large {
+	font-family: var(--sl-font-mono);
+	font-size: var(--sl-text-xs);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--sl-color-gray-3);
+}
+.sidebar-content a[aria-current='page'] {
+	background: transparent;
+	color: var(--sl-color-text-accent);
+	font-weight: 600;
+	box-shadow: inset 2px 0 0 var(--vd-mark);
+	border-radius: 0;
+}
+
+/* Headings */
+h1,
+.sl-markdown-content :is(h2, h3) {
+	font-family: var(--vd-font-display);
+	font-weight: 600;
+	font-optical-sizing: auto;
+	letter-spacing: -0.01em;
+	color: var(--sl-color-white);
+}
+.sl-markdown-content .sl-heading-wrapper.level-h2 {
+	border-top: 1px solid var(--sl-color-hairline-light);
+	padding-top: 0.75rem;
+}
+
+/* Links: underlined ink, no pill hovers */
+.sl-markdown-content a:not(:where(.not-content *)) {
+	color: var(--sl-color-text-accent);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+}
+
+/* Inline code: outlined, not filled */
+.sl-markdown-content :not(pre) > code {
+	background: transparent;
+	border: 1px solid var(--sl-color-hairline-light);
+	padding: 0.05em 0.3em;
+	border-radius: 0;
+}
+
+/* Tables: ledger style */
+.sl-markdown-content table {
+	font-size: var(--sl-text-sm);
+}
+.sl-markdown-content th {
+	font-family: var(--sl-font-mono);
+	font-weight: 600;
+	font-size: var(--sl-text-xs);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--sl-color-gray-3);
+	background: transparent;
+	border-bottom: 2px solid var(--sl-color-gray-4);
+}
+.sl-markdown-content :is(th, td) {
+	border-inline: none;
+}
+.sl-markdown-content tr:nth-child(2n) {
+	background: transparent;
+}
+
+/* Asides: left rule, no box fill */
+.starlight-aside {
+	background: transparent;
+	border-inline-start-width: 3px;
+}
+
+::selection {
+	background: var(--sl-color-accent-low);
+}
+
+/* Mobile menu button: outlined square, not a filled circle */
+starlight-menu-button button {
+	border-radius: 0;
+	background: transparent;
+	color: var(--sl-color-white);
+	box-shadow: none;
+	border: 1px solid var(--sl-color-gray-5);
+}

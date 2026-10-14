@@ -1,0 +1,128 @@
+---
+// Replaces Starlight's Hero. Used only on the home page.
+// The figure is a real binary search step, not decoration.
+const { data } = Astro.locals.starlightRoute.entry;
+const { title = data.title, tagline } = data.hero || {};
+
+const values = [2, 5, 8, 12, 16, 23, 38];
+const lo = 0;
+const mid = 3;
+const hi = 6;
+const marker = (i: number) => (i === lo ? 'lo' : i === mid ? 'mid' : i === hi ? 'hi' : '');
+---
+
+<div class="vd-hero not-content">
+	<div class="vd-hero__text">
+		<p class="vd-kicker">Data structures &amp; algorithms · a field guide</p>
+		<h1 id="_top" set:html={title} />
+		{tagline && <p class="vd-tagline" set:html={tagline} />}
+	</div>
+
+	<figure class="vd-figure" aria-label="One step of binary search">
+		<figcaption class="vd-figure__head">fig. 1 — binary search, step 1 · target = 23</figcaption>
+		<div class="vd-array" style={`--n: ${values.length}`}>
+			{values.map((_, i) => <span class="vd-idx">{i}</span>)}
+			{
+				values.map((v, i) => (
+					<span class:list={['vd-cell', { 'is-mid': i === mid, 'is-out': i <= mid }]}>{v}</span>
+				))
+			}
+			{values.map((_, i) => <span class="vd-ptr">{marker(i)}</span>)}
+		</div>
+		<p class="vd-figure__note">23 &gt; 12, so the target is right of mid. Drop the left half.</p>
+	</figure>
+</div>
+
+<style>
+	.vd-hero {
+		display: grid;
+		gap: 2.5rem;
+		padding-block: 2.5rem 1rem;
+		align-items: end;
+	}
+	@media (min-width: 60rem) {
+		.vd-hero {
+			grid-template-columns: 1.15fr 1fr;
+			padding-block: 4rem 1.5rem;
+		}
+	}
+	.vd-kicker,
+	.vd-figure__head,
+	.vd-idx,
+	.vd-ptr {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--sl-color-gray-3);
+	}
+	.vd-kicker {
+		margin: 0 0 1rem;
+		color: var(--vd-mark);
+	}
+	h1 {
+		font-family: var(--vd-font-display);
+		font-size: clamp(2.5rem, 6vw, 4.25rem);
+		font-weight: 600;
+		line-height: 1.02;
+		letter-spacing: -0.025em;
+		color: var(--sl-color-white);
+		margin: 0;
+	}
+	.vd-tagline {
+		margin: 1.25rem 0 0;
+		max-width: 34ch;
+		font-size: var(--sl-text-lg);
+		color: var(--sl-color-gray-2);
+	}
+
+	.vd-figure {
+		margin: 0;
+		border: 1px solid var(--sl-color-gray-5);
+		background: var(--sl-color-black);
+		padding: 1rem 1rem 0.9rem;
+	}
+	.vd-figure__head {
+		margin-bottom: 0.9rem;
+		padding-bottom: 0.6rem;
+		border-bottom: 1px dashed var(--sl-color-gray-5);
+		text-transform: none;
+		letter-spacing: 0.02em;
+	}
+	.vd-array {
+		display: grid;
+		grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+		row-gap: 0.35rem;
+		text-align: center;
+	}
+	.vd-cell {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-lg);
+		padding-block: 0.55rem;
+		border: 1px solid var(--sl-color-gray-4);
+		margin-inline-start: -1px;
+		color: var(--sl-color-white);
+	}
+	.vd-cell.is-out {
+		color: var(--sl-color-gray-4);
+		background-image: repeating-linear-gradient(
+			-45deg,
+			transparent 0 5px,
+			var(--vd-grid) 5px 6px
+		);
+	}
+	.vd-cell.is-mid {
+		color: var(--sl-color-black);
+		background: var(--vd-mark);
+		border-color: var(--vd-mark);
+	}
+	.vd-ptr {
+		color: var(--vd-mark);
+		font-weight: 600;
+	}
+	.vd-figure__note {
+		margin: 0.8rem 0 0;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-2);
+	}
+</style>

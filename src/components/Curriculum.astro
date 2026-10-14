@@ -1,0 +1,122 @@
+---
+// Home page table of contents, built from src/data/curriculum.mjs.
+// Topics without a page yet are listed as "planned".
+import { getCollection } from 'astro:content';
+import { curriculum } from '../data/curriculum.mjs';
+
+const written = new Set((await getCollection('docs')).map((entry) => entry.id));
+const href = (slug: string) => `${import.meta.env.BASE_URL.replace(/\/$/, '')}/${slug}/`;
+---
+
+<ol class="vd-toc not-content">
+	{
+		curriculum.map((section) => (
+			<li class="vd-section">
+				<div class="vd-section__head">
+					<span class="vd-num">{section.num}</span>
+					<h2>{section.title}</h2>
+					<p>{section.blurb}</p>
+				</div>
+				<ul>
+					{section.topics.map((topic) =>
+						written.has(topic.slug) ? (
+							<li>
+								<a href={href(topic.slug)}>{topic.title}</a>
+							</li>
+						) : (
+							<li class="is-planned">
+								<span>{topic.title}</span>
+								<small>planned</small>
+							</li>
+						)
+					)}
+				</ul>
+			</li>
+		))
+	}
+</ol>
+
+<style>
+	.vd-toc {
+		list-style: none;
+		padding: 0;
+		margin: 1rem 0 3rem;
+		border-top: 2px solid var(--sl-color-gray-4);
+	}
+	.vd-section {
+		display: grid;
+		gap: 0.5rem 2rem;
+		padding-block: 1.5rem;
+		border-bottom: 1px solid var(--sl-color-hairline-light);
+	}
+	@media (min-width: 50rem) {
+		.vd-section {
+			grid-template-columns: 18rem 1fr;
+		}
+	}
+	.vd-section__head {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		column-gap: 0.75rem;
+		align-content: start;
+	}
+	.vd-num {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-sm);
+		color: var(--vd-mark);
+		padding-top: 0.3rem;
+	}
+	h2 {
+		font-family: var(--vd-font-display);
+		font-size: var(--sl-text-2xl);
+		font-weight: 600;
+		line-height: 1.2;
+		margin: 0;
+		color: var(--sl-color-white);
+	}
+	.vd-section__head p {
+		grid-column: 2;
+		margin: 0.25rem 0 0;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+	ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+		align-content: start;
+	}
+	ul li {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 0.5rem;
+		padding: 0.45rem 0.25rem;
+		border-bottom: 1px dotted var(--sl-color-gray-5);
+		margin-inline-end: 1.25rem;
+	}
+	a {
+		color: var(--sl-color-white);
+		text-decoration: none;
+		font-weight: 600;
+	}
+	a::after {
+		content: ' →';
+		color: var(--vd-mark);
+	}
+	a:hover {
+		color: var(--sl-color-text-accent);
+	}
+	.is-planned span {
+		color: var(--sl-color-gray-3);
+	}
+	small {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-2xs);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--sl-color-gray-4);
+	}
+</style>

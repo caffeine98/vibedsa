@@ -1,0 +1,52 @@
+---
+title: How to read this site
+description: What each section of a lesson means, and how to read the pseudocode.
+---
+
+Every lesson uses the same layout. Once you know it, you can find anything fast.
+
+## The parts of a lesson
+
+| Section | What it gives you |
+| --- | --- |
+| **What it is** | The idea in one to three sentences. |
+| **How it works** | A worked example, step by step. Often a trace table. |
+| **Pseudocode** | The steps, without language details. |
+| **Python** | A working version, built from scratch. |
+| **Complexity** | Time and space cost, and why. |
+| **Gotchas** | Mistakes people often make. |
+| **In practice** | What Python already gives you, and when to use it. |
+
+Small topics may skip a section. If a section is missing, it had nothing useful to add.
+
+## Trace tables
+
+A trace table shows the state of an algorithm after each step. Read it top to bottom.
+Each row is one step. Each column is one variable.
+
+| step | lo | hi | mid | A[mid] |
+| --- | --- | --- | --- | --- |
+| 1 | 0 | 6 | 3 | 12 |
+| 2 | 4 | 6 | 5 | 23 |
+
+## Pseudocode rules
+
+The pseudocode reads like Python, with a few fixed rules:
+
+- Arrays start at index `0`. `A.length` is the number of items.
+- `x = 5` assigns. `x == 5` compares.
+- `for i from 0 to n - 1` includes both ends.
+- Indentation marks a block. There are no braces.
+- Function names are in capitals, like `BINARY-SEARCH(A, target)`.
+
+## The Python code
+
+All Python on this site is tested. The page shows the same file the tests run against,
+so the code you read is the code that passes.
+
+The code targets Python 3.12. It uses only the standard library.
+
+## Complexity
+
+Complexity uses Big-O. When it matters, the page says which case it means:
+**best**, **average**, **worst**, or **amortized** (the average cost over many operations).
