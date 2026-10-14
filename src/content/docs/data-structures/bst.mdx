@@ -1,0 +1,123 @@
+---
+title: Binary search tree
+description: A binary tree kept in order, so search, insert and delete take O(height). Why balance matters.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import TreeFigure from '../../../components/TreeFigure.astro';
+import { lessonTree, highlight } from '../../../data/trees';
+import src from '../../../../python/dsa/bst.py?raw';
+
+## What it is
+
+A binary search tree (BST) is a [binary tree](../trees/) with one rule. For every node, all keys in its **left** subtree are smaller, and all keys in its **right** subtree are bigger.
+
+That rule makes lookup work like [binary search](../../algorithms/binary-search/). At each node, you know which side the key must be on, so you skip the other side entirely.
+
+## How it works
+
+### Search
+
+Start at the root. If the key is smaller, go left. If bigger, go right. Stop when you find it, or when you fall off the tree (then it isn't there).
+
+<TreeFigure
+	tree={highlight(lessonTree, [8, 3, 6, 7])}
+	caption="search for 7: 8 → 3 → 6 → 7"
+	note="7 &lt; 8: go left. 7 &gt; 3: go right. 7 &gt; 6: go right. Found."
+/>
+
+Four steps, out of nine nodes. Each step goes down one level, so search costs O(height).
+
+### Insert
+
+Search for the key. Where the search falls off the tree, attach a new node. The tree above came from inserting 8, 3, 10, 1, 6, 14, 4, 7, 13 in that order.
+
+### Delete
+
+There are three cases:
+
+1. **No children** (a leaf): remove it.
+2. **One child:** the child takes the node's place.
+3. **Two children:** find the **successor**, the smallest key in the right subtree. Copy it into the node, then delete the successor from the right subtree. The successor has no left child, so that delete is case 1 or 2.
+
+<TreeFigure
+	tree={highlight(
+		{
+			label: 8,
+			children: [
+				{ label: 4, children: [{ label: 1 }, { label: 6, children: [null, { label: 7 }] }] },
+				{ label: 10, children: [null, { label: 14, children: [{ label: 13 }, null] }] },
+			],
+		},
+		[4]
+	)}
+	caption="after delete(3)"
+	note="3 had two children. Its successor 4 (the smallest key right of 3) took its place."
+/>
+
+An **inorder** traversal of a BST visits the keys in sorted order. The code's `__iter__` does this with a [stack](../stack/) instead of recursion.
+
+### Why balance matters
+
+The height depends on the order keys arrive in. Insert 1,000 keys in random order, and the tree has height 22 in this test. Insert 1,000 keys in sorted order, and every key goes right. The tree becomes a chain of height 1,000, really just a [linked list](../linked-list/). Search becomes O(n).
+
+**Self-balancing** trees, such as AVL trees and red-black trees, fix this. After each insert or delete, they rearrange a few nodes (called **rotations**) to keep the height O(log n). The rules are fiddly, but the goal is just to keep both sides of every node about the same height.
+
+## Pseudocode
+
+```text title="Pseudocode"
+SEARCH(node, key):
+    while node != None:
+        if key == node.key:
+            return true
+        if key < node.key:
+            node = node.left
+        else:
+            node = node.right
+    return false
+
+DELETE(node, key):                      // returns the subtree's new root
+    if node == None:
+        return None
+    if key < node.key:
+        node.left = DELETE(node.left, key)
+    else if key > node.key:
+        node.right = DELETE(node.right, key)
+    else:
+        if node.left == None:  return node.right
+        if node.right == None: return node.left
+        successor = leftmost node in node.right
+        node.key = successor.key
+        node.right = DELETE(node.right, successor.key)
+    return node
+```
+
+## Python
+
+<Code code={src} lang="python" title="bst.py" />
+
+## Complexity
+
+`h` is the height: about `log n` if balanced, up to `n` if not.
+
+| Operation | Time | Why |
+| --- | --- | --- |
+| Search, insert, delete | O(h) | One path from the root down. |
+| Smallest key | O(h) | Keep going left. |
+| All keys in order | O(n) | Inorder traversal. |
+
+So these are O(log n) on a balanced tree and O(n) in the worst case. Space is O(n).
+
+## Gotchas
+
+- **Sorted input makes a chain.** Inserting keys in sorted order is the worst case, and it's common in real data. Use a balanced tree, or shuffle the keys first.
+- **The rule covers whole subtrees.** Checking only `left.key < node.key < right.key` at each node is not enough to verify a BST. A key deep in the left subtree must still be smaller than the root.
+- **Decide what to do with duplicates.** This version ignores them. Others count them, or allow them on one side.
+- **Recursion on a deep tree fails.** This `delete` is recursive, so on a 1,000+ level chain it hits Python's recursion limit. Search and insert here use loops and don't have that problem.
+
+## In practice
+
+- Python has no built-in BST. For plain lookup, a `set` or `dict` is O(1) on average and simpler.
+- Reach for a BST when you need the keys **in order** while still adding and removing them. Examples: "the smallest key above x", or a sorted leaderboard that keeps changing.
+- In Python, `sortedcontainers.SortedList` (a third-party package) covers most of these uses. For a small list, `bisect` on a sorted list works.
+- Databases and file systems use **B-trees**: balanced search trees with many keys per node, so each lookup reads few disk blocks.

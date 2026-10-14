@@ -1,0 +1,196 @@
+---
+// A graph drawn as square nodes at fixed positions, joined by lines (inline SVG).
+// Example:
+//   <GraphFigure
+//     nodes={[{ id: 'A', x: 0, y: 0 }, { id: 'B', x: 120, y: 0, active: true }]}
+//     edges={[{ from: 'A', to: 'B', weight: 4 }]}
+//     directed
+//   />
+export interface GraphNodeSpec {
+	id: string;
+	x: number;
+	y: number;
+	/** text in the box (defaults to id) */
+	label?: string;
+	active?: boolean;
+	dim?: boolean;
+	/** small label at the node's upper right, e.g. a distance */
+	note?: string | number;
+}
+export interface GraphEdgeSpec {
+	from: string;
+	to: string;
+	weight?: string | number;
+	active?: boolean;
+	dim?: boolean;
+}
+
+interface Props {
+	nodes: GraphNodeSpec[];
+	edges: GraphEdgeSpec[];
+	directed?: boolean;
+	caption?: string;
+	note?: string;
+}
+
+const { nodes, edges, directed = false, caption, note } = Astro.props;
+
+const BOX = 34;
+const GAP = 4; // space between an arrow tip and the box
+const PAD = 28; // room around the drawing for notes and weights
+
+const byId = new Map(nodes.map((n) => [n.id, n]));
+const minX = Math.min(...nodes.map((n) => n.x)) - BOX / 2 - PAD;
+const minY = Math.min(...nodes.map((n) => n.y)) - BOX / 2 - PAD;
+const maxX = Math.max(...nodes.map((n) => n.x)) + BOX / 2 + PAD;
+const maxY = Math.max(...nodes.map((n) => n.y)) + BOX / 2 + PAD;
+const width = maxX - minX;
+const height = maxY - minY;
+
+// Trim each line so it starts and ends at the edge of the boxes, not the centers.
+const lines = edges.map((e) => {
+	const a = byId.get(e.from)!;
+	const b = byId.get(e.to)!;
+	const dx = b.x - a.x;
+	const dy = b.y - a.y;
+	const reach = Math.max(Math.abs(dx), Math.abs(dy)); // distance to a square's edge scales with this
+	const startT = (BOX / 2) / reach;
+	const endT = (BOX / 2 + (directed ? GAP : 0)) / reach;
+	return {
+		...e,
+		x1: a.x + dx * startT,
+		y1: a.y + dy * startT,
+		x2: b.x - dx * endT,
+		y2: b.y - dy * endT,
+		// weight label: midpoint, nudged sideways off the line
+		wx: (a.x + b.x) / 2 + (-dy / Math.hypot(dx, dy)) * 11,
+		wy: (a.y + b.y) / 2 + (dx / Math.hypot(dx, dy)) * 11,
+	};
+});
+
+// Unique marker ids, since a page can have several figures.
+const uid = Math.random().toString(36).slice(2, 8);
+const arrow = `vd-arrow-${uid}`;
+const arrowActive = `vd-arrow-active-${uid}`;
+---
+
+<figure class="vd-figure not-content">
+	{caption && <figcaption class="vd-figure__head">{caption}</figcaption>}
+	<div class="vd-figure__body">
+		<svg
+			class="vd-graph"
+			viewBox={`${minX} ${minY} ${width} ${height}`}
+			width={width}
+			height={height}
+			role="img"
+			aria-label={caption ?? 'graph diagram'}
+		>
+			{
+				directed && (
+					<defs>
+						<marker id={arrow} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+							<path class="vd-graph__tip" d="M0,0 L10,5 L0,10 z" />
+						</marker>
+						<marker id={arrowActive} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+							<path class="vd-graph__tip is-active" d="M0,0 L10,5 L0,10 z" />
+						</marker>
+					</defs>
+				)
+			}
+			{
+				lines.map((l) => (
+					<g class:list={['vd-graph__edge', { 'is-active': l.active, 'is-dim': l.dim }]}>
+						<line
+							x1={l.x1}
+							y1={l.y1}
+							x2={l.x2}
+							y2={l.y2}
+							marker-end={directed ? `url(#${l.active ? arrowActive : arrow})` : undefined}
+						/>
+						{l.weight !== undefined && (
+							<text class="vd-graph__weight" x={l.wx} y={l.wy}>
+								{l.weight}
+							</text>
+						)}
+					</g>
+				))
+			}
+			{
+				nodes.map((n) => (
+					<g class:list={['vd-graph__node', { 'is-active': n.active, 'is-dim': n.dim }]}>
+						<rect x={n.x - BOX / 2} y={n.y - BOX / 2} width={BOX} height={BOX} />
+						<text x={n.x} y={n.y}>{n.label ?? n.id}</text>
+						{n.note !== undefined && (
+							<text class="vd-graph__note" x={n.x + BOX / 2 + 3} y={n.y - BOX / 2 - 2}>
+								{n.note}
+							</text>
+						)}
+					</g>
+				))
+			}
+		</svg>
+	</div>
+	{note && <p class="vd-figure__note" set:html={note} />}
+</figure>
+
+<style>
+	.vd-graph {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		margin-inline: auto;
+	}
+	.vd-graph__edge line {
+		stroke: var(--sl-color-gray-4);
+		stroke-width: 1.5;
+	}
+	.vd-graph__edge.is-active line {
+		stroke: var(--vd-mark);
+		stroke-width: 3;
+	}
+	.vd-graph__tip {
+		fill: var(--sl-color-gray-4);
+	}
+	.vd-graph__tip.is-active {
+		fill: var(--vd-mark);
+	}
+	.vd-graph__weight {
+		fill: var(--sl-color-gray-2);
+		font-family: var(--sl-font-mono);
+		font-size: 13px;
+		text-anchor: middle;
+		dominant-baseline: central;
+		paint-order: stroke;
+		stroke: var(--sl-color-black);
+		stroke-width: 4px;
+	}
+	.vd-graph__node rect {
+		fill: var(--sl-color-black);
+		stroke: var(--sl-color-gray-4);
+		stroke-width: 1.5;
+	}
+	.vd-graph__node text {
+		fill: var(--sl-color-white);
+		font-family: var(--sl-font-mono);
+		font-size: 15px;
+		text-anchor: middle;
+		dominant-baseline: central;
+	}
+	.vd-graph__node .vd-graph__note {
+		fill: var(--vd-mark);
+		font-size: 12px;
+		font-weight: 600;
+		text-anchor: start;
+		dominant-baseline: auto;
+	}
+	.vd-graph__node.is-active rect {
+		fill: var(--vd-mark);
+		stroke: var(--vd-mark);
+	}
+	.vd-graph__node.is-active text:not(.vd-graph__note) {
+		fill: var(--sl-color-black);
+	}
+	.is-dim {
+		opacity: 0.3;
+	}
+</style>

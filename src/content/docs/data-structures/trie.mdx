@@ -1,0 +1,101 @@
+---
+title: Trie
+description: A tree of letters for storing words. Look up a word or a prefix in time that depends only on its length.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import TreeFigure from '../../../components/TreeFigure.astro';
+import src from '../../../../python/dsa/trie.py?raw';
+
+## What it is
+
+A trie (pronounced "try", also called a **prefix tree**) stores a set of words in a tree. Each link is one letter. The path from the root to a node spells a prefix. Each node also records whether a full word ends there.
+
+Words that share a beginning share a path. That makes questions about **prefixes** fast, like "which words start with `ca`?"
+
+## How it works
+
+Here is a trie holding `car`, `cart`, `cat`, `do` and `dog`:
+
+<TreeFigure
+	tree={{
+		label: '·',
+		children: [
+			{
+				label: 'c',
+				children: [
+					{
+						label: 'a',
+						children: [
+							{ label: 'r', mark: true, children: [{ label: 't', mark: true }] },
+							{ label: 't', mark: true },
+						],
+					},
+				],
+			},
+			{ label: 'd', children: [{ label: 'o', mark: true, children: [{ label: 'g', mark: true }] }] },
+		],
+	}}
+	caption="car, cart, cat, do, dog"
+	note="The root (·) holds no letter. A thick outline means a word ends at that node."
+/>
+
+- **Insert** a word: follow its letters from the root, creating any node that's missing. Mark the last node as a word end.
+- **Look up** a word: follow its letters. If the path breaks off, the word isn't there. If the path exists, the word is there only if the last node is marked.
+- **Prefix search:** follow the prefix, then collect every marked node below it.
+
+So `ca` follows a path that exists, but the `a` node isn't marked. `ca` is a prefix of stored words, but not a word itself. To list the words starting with `ca`, walk the subtree under that `a`: `car`, `cart`, `cat`.
+
+## Pseudocode
+
+```text title="Pseudocode"
+INSERT(trie, word):
+    node = trie.root
+    for each letter in word:
+        if letter not in node.children:
+            node.children[letter] = new node
+        node = node.children[letter]
+    node.is_word = true
+
+FIND(trie, prefix):                     // the node at the end of prefix
+    node = trie.root
+    for each letter in prefix:
+        if letter not in node.children:
+            return None
+        node = node.children[letter]
+    return node
+
+CONTAINS(trie, word):
+    node = FIND(trie, word)
+    return node != None and node.is_word
+```
+
+## Python
+
+Each node keeps its children in a [dict](../hash-map/), from letter to node.
+
+<Code code={src} lang="python" title="trie.py" />
+
+## Complexity
+
+`L` is the length of the word or prefix.
+
+| Operation | Time | Why |
+| --- | --- | --- |
+| Insert, contains, starts with | O(L) | One step per letter. The number of stored words doesn't matter. |
+| List words with a prefix | O(L + m) | Reach the prefix, then visit the `m` nodes below it. |
+
+Space is O(total letters stored) in the worst case. Shared prefixes are stored once, so it's often much less.
+
+## Gotchas
+
+- **A path is not a word.** Without the `is_word` flag, you can't tell `car` (a word) from `ca` (just a prefix).
+- **Tries use a lot of memory.** Each node here is a Python object with its own dict. For a large dictionary of words, that adds up fast.
+- **Normalize first.** `Car` and `car` are different paths. Lowercase or clean the words before inserting them.
+- **Deleting needs care.** Unmark the word end, then remove only the nodes that no other word uses.
+
+## In practice
+
+- Use a trie for autocomplete, spell checkers, word games, and routers that find the longest matching address prefix.
+- If you only need "is this exact word in the set?", a Python `set` is simpler and faster. A trie only pays off when you ask about prefixes.
+- Python has no built-in trie. Nested dicts are a quick stand-in: `node = node.setdefault(letter, {})`.

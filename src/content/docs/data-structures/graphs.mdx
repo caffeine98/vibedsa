@@ -1,0 +1,99 @@
+---
+title: Graph basics
+description: Nodes joined by edges. The vocabulary, and the two common ways to store a graph in code.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import GraphFigure from '../../../components/GraphFigure.astro';
+import { lessonNodes, lessonEdges } from '../../../data/graphs';
+import src from '../../../../python/dsa/graphs.py?raw';
+
+## What it is
+
+A graph is a set of **nodes** (also called vertices) joined by **edges**. It models anything made of things and connections: road maps, social networks, web links, or tasks that depend on other tasks.
+
+A [tree](../trees/) is a special kind of graph, with one root and no loops. A general graph has neither rule.
+
+## How it works
+
+<GraphFigure nodes={lessonNodes} edges={lessonEdges} caption="an undirected graph with 6 nodes and 6 edges" />
+
+The words you'll need:
+
+- **Directed** edges have a direction, drawn as arrows: A → B doesn't mean B → A. Undirected edges go both ways, like the ones above.
+- **Weighted** edges carry a number, like a distance or a cost.
+- **Neighbors** of a node are the nodes one edge away. C's neighbors are A, D and E.
+- **Degree:** a node's number of edges. C has degree 3.
+- A **path** is a chain of edges. A **cycle** is a path that returns to where it started, like A → B → D → C → A.
+- A graph is **connected** if there's a path between every pair of nodes.
+
+`V` is the number of nodes and `E` is the number of edges. Graph costs are written in terms of both.
+
+### Storing a graph
+
+**Adjacency list:** for each node, a list of its neighbors. In Python, a dict of lists:
+
+```text
+A: B C          D: B C
+B: A D          E: C F
+C: A D E        F: E
+```
+
+**Adjacency matrix:** a `V × V` grid. Row `i`, column `j` holds 1 if there's an edge from `i` to `j`:
+
+<div class="vd-trace">
+
+| | A | B | C | D | E | F |
+| --- | --- | --- | --- | --- | --- | --- |
+| **A** | 0 | 1 | 1 | 0 | 0 | 0 |
+| **B** | 1 | 0 | 0 | 1 | 0 | 0 |
+| **C** | 1 | 0 | 0 | 1 | 1 | 0 |
+| **D** | 0 | 1 | 1 | 0 | 0 | 0 |
+| **E** | 0 | 0 | 1 | 0 | 0 | 1 |
+| **F** | 0 | 0 | 0 | 0 | 1 | 0 |
+
+</div>
+
+For an undirected graph, the matrix is mirrored across its diagonal.
+
+Most real graphs are **sparse**: each node connects to only a few others. A matrix for them is mostly zeros, so the adjacency list is the usual default.
+
+## Pseudocode
+
+```text title="Pseudocode"
+ADJACENCY-LIST(nodes, edges, directed):
+    graph = map from each node to an empty list
+    for each edge (u, v) in edges:
+        append v to graph[u]
+        if not directed:
+            append u to graph[v]
+    return graph
+```
+
+## Python
+
+<Code code={src} lang="python" title="graphs.py" />
+
+## Complexity
+
+| | Adjacency list | Adjacency matrix |
+| --- | --- | --- |
+| Space | O(V + E) | O(V²) |
+| Is there an edge u–v? | O(degree of u) | O(1) |
+| List the neighbors of u | O(degree of u) | O(V) |
+| Add an edge | O(1) | O(1) |
+
+Use a list for sparse graphs, which is most of them. Use a matrix when the graph is dense, or when you check "is there an edge?" very often.
+
+## Gotchas
+
+- **Undirected edges go in twice.** Add `v` to `u`'s list *and* `u` to `v`'s. Forgetting the second one makes a directed graph by accident.
+- **Don't lose lonely nodes.** If you build the dict only from edges, a node with no edges never gets an entry. Then looking it up raises `KeyError`. Create an entry for every node first, as this code does.
+- **Watch for duplicate edges and self-loops.** An edge listed twice, or an edge from a node to itself, can throw off degree counts and cycle checks.
+
+## In practice
+
+- A `dict` of lists, or `collections.defaultdict(list)`, is the normal Python graph.
+- Many problems never build the graph at all. In a grid or maze, a cell's neighbors are just the cells above, below, left and right, computed when needed.
+- For analysis on real data, the `networkx` package (third-party) has most graph algorithms built in.
+- Next: [breadth-first search](../../algorithms/bfs/) and [depth-first search](../../algorithms/dfs/), the two basic ways to explore a graph.

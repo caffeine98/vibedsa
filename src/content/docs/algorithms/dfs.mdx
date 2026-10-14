@@ -1,0 +1,97 @@
+---
+title: Depth-first search
+description: Follow one path as far as it goes, then back up and try the next. Connected pieces and cycle detection.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import GraphFigure from '../../../components/GraphFigure.astro';
+import { lessonNodes, lessonEdges, annotate, highlightEdges } from '../../../data/graphs';
+import src from '../../../../python/dsa/dfs.py?raw';
+
+## What it is
+
+Depth-first search (DFS) explores a [graph](../../data-structures/graphs/) by going as deep as it can along one path. When it reaches a dead end, it backs up to the last node with an unvisited neighbor and goes deep from there.
+
+It's naturally [recursive](../../foundations/recursion/): visiting a node means visiting each unvisited neighbor, fully, one after another.
+
+## How it works
+
+From A, take the first neighbor and keep going:
+
+<GraphFigure
+	nodes={annotate(lessonNodes, { A: 1, B: 2, D: 3, C: 4, E: 5, F: 6 }, ['A'])}
+	edges={highlightEdges(lessonEdges, ['A-B', 'B-D', 'D-C', 'C-E', 'E-F'])}
+	caption="DFS from A · small numbers are the visit order"
+	note="The highlighted edges are the ones DFS followed to reach a new node."
+/>
+
+1. Visit **A**. Its first neighbor is B.
+2. Visit **B**. A is seen, so go to D.
+3. Visit **D**. B is seen, so go to C.
+4. Visit **C**. A and D are seen, so go to E.
+5. Visit **E**, then **F**. F has no new neighbors.
+6. Back up through E, C, D and B to A. A's other neighbor, C, is already seen. Done.
+
+The order is A B D C E F. Compare [BFS](../bfs/), which gives A B C D E F. DFS went from B straight down to D instead of visiting C first.
+
+### With a stack instead of recursion
+
+The recursion uses the [call stack](../../foundations/recursion/) to remember where to back up to. You can use your own [stack](../../data-structures/stack/) instead. That avoids Python's recursion limit on large graphs. Push the start node, then repeatedly pop a node, visit it if it's new, and push its neighbors.
+
+### Finding connected pieces
+
+Run DFS from any node, and it marks that node's whole connected piece (**component**). To count the pieces, loop over every node. Each time you find one that isn't marked, that's a new piece. Run DFS from it.
+
+### Finding cycles in a directed graph
+
+Give each node one of three states: **new**, **active** (DFS is still inside it, on the current path), or **done**. If DFS follows an edge to an *active* node, that edge leads back into the current path. That's a cycle.
+
+An edge to a *done* node is not a cycle. That node was finished earlier, along a different path.
+
+## Pseudocode
+
+```text title="Pseudocode"
+DFS(graph, node, visited):
+    add node to visited
+    for each neighbor of node:
+        if neighbor not in visited:
+            DFS(graph, neighbor, visited)
+
+HAS-CYCLE(graph):                       // directed graph
+    state = NEW for every node
+    for each node with state NEW:
+        if VISIT(node): return true
+    return false
+
+VISIT(node):
+    state[node] = ACTIVE
+    for each neighbor of node:
+        if state[neighbor] == ACTIVE: return true
+        if state[neighbor] == NEW and VISIT(neighbor): return true
+    state[node] = DONE
+    return false
+```
+
+## Python
+
+<Code code={src} lang="python" title="dfs.py" />
+
+## Complexity
+
+| | Cost | Why |
+| --- | --- | --- |
+| Time | O(V + E) | Each node is visited once. Each edge is checked once from each end. |
+| Space | O(V) | The visited set, plus the stack, which can be as deep as the longest path. |
+
+## Gotchas
+
+- **Long paths break recursion.** A path of 1,000+ nodes hits Python's recursion limit. Use the stack version for big graphs. A test runs it on a 5,000-node path.
+- **The stack version needs care to match.** Push neighbors in reverse, so the first neighbor comes off the stack first. Check "seen" when you pop, because a node can be pushed more than once.
+- **Directed and undirected cycles differ.** The three-state check is for directed graphs. In an undirected graph, every edge leads straight back to the node you came from. There, a cycle is an edge to a seen node *other than* your parent.
+
+## In practice
+
+- Use DFS to explore everything reachable: flood fill in images, solving mazes, counting islands in a grid.
+- It finds components, cycles, and an order for tasks that depend on each other. That last one is [topological sort](../topological-sort/).
+- **Backtracking** (a later lesson) is DFS over choices instead of nodes: try a choice, go deep, and undo it on the way back up.
+- If you need the *shortest* path, use [BFS](../bfs/). DFS finds *a* path, not the shortest one.

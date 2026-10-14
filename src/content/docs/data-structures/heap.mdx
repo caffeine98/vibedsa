@@ -1,0 +1,147 @@
+---
+title: Heap and heap sort
+description: A tree stored in an array that always gives you the smallest item in O(1). Push and pop in O(log n), and heap sort.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import TreeFigure from '../../../components/TreeFigure.astro';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/heap.py?raw';
+
+## What it is
+
+A **min-heap** is a binary tree where every parent is smaller than or equal to its children. So the smallest item is always at the root. (A **max-heap** flips this: the biggest item is at the root.)
+
+A heap is the usual way to build a **priority queue**: a collection where you can add items and always take out the smallest next.
+
+It is *not* sorted. It only promises that each parent beats its own children.
+
+## How it works
+
+### Stored in an array
+
+A heap is a **complete** tree: every level is full except maybe the last, which fills from the left. That means it fits in an array with no gaps. You don't need any pointers:
+
+<TreeFigure
+	tree={{
+		label: 1,
+		note: 0,
+		children: [
+			{ label: 3, note: 1, children: [{ label: 5, note: 3 }, { label: 4, note: 4 }] },
+			{ label: 2, note: 2, children: [{ label: 8, note: 5 }, null] },
+		],
+	}}
+	caption="a min-heap · small numbers are array indexes"
+/>
+
+<ArrayFigure values={[1, 3, 2, 5, 4, 8]} caption="the same heap, as the array it's stored in" />
+
+For the item at index `i`:
+
+```text
+parent      = (i - 1) // 2
+left child  = 2i + 1
+right child = 2i + 2
+```
+
+### Push: add at the end, sift up
+
+Append the new item. While it's smaller than its parent, swap them. Here is `push(1)` into the heap `[3, 5, 8]`:
+
+<div class="vd-trace">
+
+| step | array |
+| --- | --- |
+| append 1 at index 3 | 3 5 8 1 |
+| 1 < its parent 5: swap | 3 1 8 5 |
+| 1 < its parent 3: swap | 1 3 8 5 |
+| at the root: stop | 1 3 8 5 |
+
+</div>
+
+### Pop: take the root, sift down
+
+The smallest item is at index 0. Take it, move the last item to the top, then swap that item down with its smaller child until both children are bigger. Here is `pop()` on `[1, 3, 2, 5, 4, 8]`:
+
+<div class="vd-trace">
+
+| step | array |
+| --- | --- |
+| take 1, move the last item (8) to the top | 8 3 2 5 4 |
+| children are 3 and 2. 2 is smaller and beats 8: swap | 2 3 8 5 4 |
+| 8 has no children now: stop | 2 3 8 5 4 |
+
+</div>
+
+Both operations move along one path from top to bottom. The tree is complete, so that path is `log n` levels long.
+
+### Building a heap in O(n)
+
+Pushing `n` items one by one costs O(n log n). It's faster to sift down every parent, starting from the last one and working back to the root. Most nodes are near the bottom and only sift a short way, so the total is O(n).
+
+### Heap sort
+
+1. Build a **max**-heap from the list, in place.
+2. Swap the root (the biggest item) with the last item. That item is now in its final place.
+3. Shrink the heap by one and sift the new root down.
+4. Repeat until the heap is empty.
+
+It's O(n log n) in every case and needs no extra memory.
+
+## Pseudocode
+
+```text title="Pseudocode"
+PUSH(H, item):
+    append item to H
+    i = H.length - 1
+    while i > 0 and H[i] < H[(i - 1) // 2]:
+        swap H[i] and H[(i - 1) // 2]
+        i = (i - 1) // 2
+
+POP(H):
+    smallest = H[0]
+    H[0] = last item of H, removed from the end
+    SIFT-DOWN(H, 0)
+    return smallest
+
+SIFT-DOWN(H, i):
+    loop:
+        smallest = whichever of i, 2i + 1, 2i + 2 holds the smallest item
+        if smallest == i:
+            return
+        swap H[i] and H[smallest]
+        i = smallest
+```
+
+## Python
+
+<Code code={src} lang="python" title="heap.py" />
+
+## Complexity
+
+| Operation | Time | Why |
+| --- | --- | --- |
+| Peek at the smallest | O(1) | It's at index 0. |
+| Push, pop | O(log n) | One path, top to bottom. |
+| Build from `n` items | O(n) | Most nodes sift down only a short way. |
+| Find any other item | O(n) | The heap order doesn't help, so scan the array. |
+| Heap sort | O(n log n) | `n` pops at O(log n) each. Same in every case. |
+
+Space is O(n) for the heap. Heap sort is in place, O(1) extra. It is **not** stable.
+
+## Gotchas
+
+- **A heap isn't sorted.** `[1, 3, 2, 5, 4, 8]` is a valid heap. Only `heap[0]` is guaranteed to be the smallest.
+- **Index formulas depend on where you start.** These are for index 0. Many textbooks start at index 1, where the children are `2i` and `2i + 1`.
+- **`heapq` is a min-heap only.** For a max-heap, push `-x` and negate what you pop.
+- **Ties in `(priority, item)` tuples.** When two priorities are equal, Python compares the items next. If the items can't be compared, that raises a `TypeError`. Use `(priority, counter, item)` with a counter that goes up each push.
+
+## In practice
+
+Python's `heapq` module works on a plain list:
+
+- `heappush(h, x)`, `heappop(h)`, and `h[0]` to peek.
+- `heapify(items)` builds a heap in place in O(n).
+- `nsmallest(k, items)` and `nlargest(k, items)` find the top `k`.
+
+Heaps power Dijkstra's shortest-path algorithm, "top k" problems, merging sorted lists (`heapq.merge`), and task schedulers. To track a running median, use two heaps: a max-heap for the lower half and a min-heap for the upper half.

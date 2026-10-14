@@ -1,0 +1,101 @@
+---
+title: Topological sort
+description: Order tasks so each one comes after everything it depends on. Kahn's algorithm, and how it spots cycles.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import GraphFigure from '../../../components/GraphFigure.astro';
+import { taskNodes, taskEdges, annotate } from '../../../data/graphs';
+import src from '../../../../python/dsa/topological_sort.py?raw';
+
+## What it is
+
+A topological sort orders the nodes of a directed graph so that every edge points **forward**. If an edge means "A must happen before C", then A comes before C in the order.
+
+This only works if the graph has no cycles. A directed graph with no cycles is called a **DAG** (directed acyclic graph). With a cycle like "A before B, B before A", no valid order exists.
+
+## How it works
+
+Here edges mean "must come before". C needs A and B first. E needs C and D.
+
+<GraphFigure
+	nodes={annotate(taskNodes, { A: 0, B: 0, C: 2, D: 1, E: 2, F: 1 })}
+	edges={taskEdges}
+	directed
+	caption="tasks and what they depend on · small numbers are in-degrees"
+/>
+
+A node's **in-degree** is the number of edges coming into it: how many things it's still waiting for.
+
+**Kahn's algorithm:**
+
+1. Put every node with in-degree 0 in a [queue](../../data-structures/queue/). Nothing blocks them.
+2. Take a node from the queue and add it to the order.
+3. For each edge out of it, lower the target's in-degree by 1. If that reaches 0, the target is unblocked: add it to the queue.
+4. Repeat until the queue is empty.
+
+<div class="vd-trace">
+
+| take | lower in-degree of | newly unblocked | queue after |
+| --- | --- | --- | --- |
+| – | – | A, B | A B |
+| A | C (2 → 1) | none | B |
+| B | C (1 → 0), D (1 → 0) | C, D | C D |
+| C | E (2 → 1) | none | D |
+| D | E (1 → 0) | E | E |
+| E | F (1 → 0) | F | F |
+| F | – | none | empty |
+
+</div>
+
+The order is A B C D E F. Other orders are also valid, such as B D A C E F. Any order where every arrow points forward is correct.
+
+### Spotting a cycle
+
+Add an edge F → C. Now C waits for F, F waits for E, and E waits for C. None of them ever reaches in-degree 0, so they never enter the queue. The order ends up shorter than the number of nodes. That's how the code detects a cycle and returns `None`.
+
+### The DFS version
+
+Topological sort can also use [DFS](../dfs/). Record each node when DFS *finishes* it, after all its descendants. Then reverse that list. Kahn's algorithm is usually easier to follow, and it finds cycles without extra work.
+
+## Pseudocode
+
+```text title="Pseudocode"
+TOPOLOGICAL-SORT(nodes, edges):
+    in_degree[v] = number of edges into v, for every v
+    queue = every node with in_degree 0
+    order = empty list
+    while queue is not empty:
+        node = DEQUEUE(queue)
+        append node to order
+        for each edge node → next:
+            in_degree[next] = in_degree[next] - 1
+            if in_degree[next] == 0:
+                ENQUEUE(queue, next)
+    if order.length < nodes.length:
+        return None                     // a cycle blocked some nodes
+    return order
+```
+
+## Python
+
+<Code code={src} lang="python" title="topological_sort.py" />
+
+## Complexity
+
+| | Cost | Why |
+| --- | --- | --- |
+| Time | O(V + E) | Each node enters the queue once. Each edge lowers one in-degree once. |
+| Space | O(V + E) | The adjacency list, in-degrees and queue. |
+
+## Gotchas
+
+- **There's usually more than one answer.** Don't test a topological sort against one fixed order. Check that every edge points forward instead.
+- **Always check for cycles.** If you skip the length check, a cyclic graph silently returns a partial order.
+- **Edge direction matters.** Decide whether `(a, b)` means "a before b" or "a depends on b". Mixing them up gives a reversed order.
+- **Include nodes with no edges.** A task with no dependencies still belongs in the order. Build the in-degree table from the node list, not just the edges.
+
+## In practice
+
+- Topological sort orders anything with dependencies: build steps, package installs, spreadsheet cells that refer to other cells, or course prerequisites.
+- Python has it built in: `graphlib.TopologicalSorter` (Python 3.9+). It raises `CycleError` on a cycle. This lesson's tests check the code against it.

@@ -1,0 +1,99 @@
+---
+title: Breadth-first search
+description: Explore a graph in rings around the start node, nearest first. Finds shortest paths in unweighted graphs.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import GraphFigure from '../../../components/GraphFigure.astro';
+import { lessonNodes, lessonEdges, annotate, highlightEdges } from '../../../data/graphs';
+import src from '../../../../python/dsa/bfs.py?raw';
+
+## What it is
+
+Breadth-first search (BFS) explores a [graph](../../data-structures/graphs/) outward from a start node. It visits all the nodes one edge away, then all the nodes two edges away, and so on.
+
+Because it reaches nodes in order of distance, BFS finds the **shortest path** (the fewest edges) from the start to every other node.
+
+## How it works
+
+Keep a [queue](../../data-structures/queue/) of nodes to visit, and a record of which nodes you've already seen. Start with just the start node in the queue. Then repeat:
+
+1. Take the node at the front of the queue.
+2. For each neighbor you haven't seen yet: mark it seen and add it to the back of the queue.
+
+The queue keeps nodes in order of distance. Everything at distance 1 is in front of everything at distance 2.
+
+<div class="vd-trace">
+
+| take | new neighbors added | queue after |
+| --- | --- | --- |
+| – | A (the start) | A |
+| A | B, C | B C |
+| B | D | C D |
+| C | E (D was already seen) | D E |
+| D | none | E |
+| E | F | F |
+| F | none | empty |
+
+</div>
+
+The visit order is A B C D E F. Each node's distance is one more than the node that added it:
+
+<GraphFigure
+	nodes={annotate(lessonNodes, { A: 0, B: 1, C: 1, D: 2, E: 2, F: 3 }, ['A'])}
+	edges={highlightEdges(lessonEdges, ['A-C', 'C-E', 'E-F'])}
+	caption="distances from A · shortest path to F highlighted"
+	note="Each small number is the node's distance from A, in edges."
+/>
+
+### Recovering the path
+
+When a node is added to the queue, record which node added it: its **parent**. To get the path to F, follow parents back from F: F ← E ← C ← A. Reverse that to get A → C → E → F.
+
+## Pseudocode
+
+```text title="Pseudocode"
+BFS(graph, start):
+    parent = { start: None }            // also the "seen" set
+    queue = [start]
+    while queue is not empty:
+        node = DEQUEUE(queue)
+        for each neighbor of node:
+            if neighbor not in parent:
+                parent[neighbor] = node
+                ENQUEUE(queue, neighbor)
+    return parent
+
+SHORTEST-PATH(graph, start, goal):
+    parent = BFS(graph, start)
+    if goal not in parent:
+        return None                     // can't reach goal
+    path = [goal]
+    while last item of path != start:
+        append parent[last item of path] to path
+    return path reversed
+```
+
+## Python
+
+<Code code={src} lang="python" title="bfs.py" />
+
+## Complexity
+
+| | Cost | Why |
+| --- | --- | --- |
+| Time | O(V + E) | Each node enters the queue once. Each edge is checked once from each end. |
+| Space | O(V) | The queue and the seen set each hold up to `V` nodes. |
+
+## Gotchas
+
+- **Mark nodes as seen when you add them, not when you take them.** Otherwise a node can be added several times before it's taken. In the trace above, D would be added by both B and C.
+- **Use `collections.deque`.** `list.pop(0)` is O(n), which makes BFS O(V²).
+- **"Shortest" means fewest edges.** If edges have different weights, BFS can give a longer path. Weighted graphs need Dijkstra's algorithm, covered in a later lesson.
+- **Some nodes may be unreachable.** If the graph isn't connected, BFS only finds the start node's piece. Check for a missing goal before building a path.
+
+## In practice
+
+- Use BFS for "fewest steps" problems: mazes and grids, word ladders, or degrees of separation in a social network.
+- Level-order traversal of a [tree](../../data-structures/trees/) is BFS. A tree has no cycles, so it doesn't need a seen set.
+- Starting from several nodes at once (put them all in the queue first) gives each node's distance to the *nearest* start. This is called **multi-source BFS**.

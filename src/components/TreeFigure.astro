@@ -1,0 +1,135 @@
+---
+// A tree drawn as square nodes joined by lines (inline SVG).
+// Each node: { label, children?, active?, mark?, dim? }.
+// Use null in children to keep an empty slot, so a lone right child
+// still sits to the right: { label: 10, children: [null, { label: 14 }] }
+export interface TreeNodeSpec {
+	label: string | number;
+	children?: (TreeNodeSpec | null)[];
+	/** filled with the accent color */
+	active?: boolean;
+	/** accent outline, e.g. "a word ends here" in a trie */
+	mark?: boolean;
+	/** faded out */
+	dim?: boolean;
+	/** small label at the node's lower right, e.g. an array index */
+	note?: string | number;
+}
+
+interface Props {
+	tree: TreeNodeSpec;
+	caption?: string;
+	note?: string;
+}
+
+const { tree, caption, note } = Astro.props;
+
+const UNIT = 52; // horizontal space per leaf slot
+const LEVEL = 66; // vertical space per level
+const BOX = 34; // node size
+const PAD = 8;
+
+const width = (n: TreeNodeSpec | null): number =>
+	!n || !n.children?.length ? 1 : n.children.reduce((sum, c) => sum + width(c), 0);
+
+type Placed = { node: TreeNodeSpec; x: number; y: number };
+const nodes: Placed[] = [];
+const edges: { x1: number; y1: number; x2: number; y2: number }[] = [];
+let depth = 0;
+
+function place(n: TreeNodeSpec, left: number, level: number): Placed {
+	const x = (left + width(n) / 2) * UNIT;
+	const y = level * LEVEL + BOX / 2 + PAD;
+	const me = { node: n, x, y };
+	nodes.push(me);
+	depth = Math.max(depth, level);
+	let childLeft = left;
+	for (const c of n.children ?? []) {
+		if (c) {
+			const child = place(c, childLeft, level + 1);
+			edges.push({ x1: x, y1: y + BOX / 2, x2: child.x, y2: child.y - BOX / 2 });
+		}
+		childLeft += width(c);
+	}
+	return me;
+}
+place(tree, 0, 0);
+
+const svgWidth = width(tree) * UNIT;
+const svgHeight = depth * LEVEL + BOX + PAD * 2;
+---
+
+<figure class="vd-figure not-content">
+	{caption && <figcaption class="vd-figure__head">{caption}</figcaption>}
+	<div class="vd-figure__body">
+		<svg
+			class="vd-tree"
+			viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+			width={svgWidth}
+			height={svgHeight}
+			role="img"
+			aria-label={caption ?? 'tree diagram'}
+		>
+			{edges.map((e) => <line class="vd-tree__edge" x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} />)}
+			{
+				nodes.map(({ node, x, y }) => (
+					<g class:list={['vd-tree__node', { 'is-active': node.active, 'is-mark': node.mark, 'is-dim': node.dim }]}>
+						<rect x={x - BOX / 2} y={y - BOX / 2} width={BOX} height={BOX} />
+						<text x={x} y={y}>{node.label}</text>
+						{node.note !== undefined && (
+							<text class="vd-tree__note" x={x + BOX / 2 + 4} y={y + BOX / 2 - 4}>
+								{node.note}
+							</text>
+						)}
+					</g>
+				))
+			}
+		</svg>
+	</div>
+	{note && <p class="vd-figure__note" set:html={note} />}
+</figure>
+
+<style>
+	.vd-tree {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		margin-inline: auto;
+		overflow: visible;
+	}
+	.vd-tree__edge {
+		stroke: var(--sl-color-gray-4);
+		stroke-width: 1.5;
+	}
+	.vd-tree__node rect {
+		fill: var(--sl-color-black);
+		stroke: var(--sl-color-gray-4);
+		stroke-width: 1.5;
+	}
+	.vd-tree__node text {
+		fill: var(--sl-color-white);
+		font-family: var(--sl-font-mono);
+		font-size: 15px;
+		text-anchor: middle;
+		dominant-baseline: central;
+	}
+	.vd-tree__node .vd-tree__note {
+		fill: var(--sl-color-gray-3);
+		font-size: 11px;
+		text-anchor: start;
+	}
+	.vd-tree__node.is-active rect {
+		fill: var(--vd-mark);
+		stroke: var(--vd-mark);
+	}
+	.vd-tree__node.is-active text:not(.vd-tree__note) {
+		fill: var(--sl-color-black);
+	}
+	.vd-tree__node.is-mark rect {
+		stroke: var(--vd-mark);
+		stroke-width: 3;
+	}
+	.vd-tree__node.is-dim {
+		opacity: 0.35;
+	}
+</style>

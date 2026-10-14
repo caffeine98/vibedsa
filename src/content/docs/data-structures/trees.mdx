@@ -1,0 +1,99 @@
+---
+title: Trees and traversals
+description: Nodes with parents and children. The vocabulary, and the four ways to visit every node.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import TreeFigure from '../../../components/TreeFigure.astro';
+import { lessonTree } from '../../../data/trees';
+import src from '../../../../python/dsa/trees.py?raw';
+
+## What it is
+
+A tree is a set of nodes joined by links from **parent** to **child**. One node, the **root**, has no parent. Every other node has exactly one parent. There are no loops.
+
+In a **binary tree**, each node has at most two children, called **left** and **right**.
+
+## How it works
+
+<TreeFigure tree={lessonTree} caption="a binary tree with root 8" />
+
+The words you'll need:
+
+- **Leaf:** a node with no children. Here: 1, 4, 7 and 13.
+- **Subtree:** a node and everything below it. The left subtree of 8 is the tree rooted at 3.
+- **Depth** of a node: how many links up to the root. Node 6 has depth 2.
+- **Height** of a tree: how many levels it has. This tree has height 4. (Some sources count links instead of levels, which gives 3.)
+
+### Traversals
+
+A traversal visits every node once. The first three go deep before going wide. They differ only in *when* they visit the node compared with its subtrees:
+
+| Order | Rule | Result for this tree |
+| --- | --- | --- |
+| Preorder | node, left, right | 8 3 1 6 4 7 10 14 13 |
+| Inorder | left, node, right | 1 3 4 6 7 8 10 13 14 |
+| Postorder | left, right, node | 1 4 7 6 3 13 14 10 8 |
+| Level order | one level at a time, left to right | 8 3 10 1 6 14 4 7 13 |
+
+Each order has its use:
+
+- **Preorder** sees a parent before its children. Use it to copy a tree or save it to a file.
+- **Inorder** on a [binary search tree](../bst/) gives the keys in sorted order. Look at the result above.
+- **Postorder** sees the children before their parent. Use it when a node needs its children's answers first, like computing heights or freeing memory.
+- **Level order** goes level by level. It uses a [queue](../queue/) instead of recursion. It's the tree version of breadth-first search.
+
+The height of a tree is a classic postorder computation: a node's height is 1 + the taller of its two subtrees.
+
+## Pseudocode
+
+```text title="Pseudocode"
+INORDER(node):
+    if node == None:
+        return
+    INORDER(node.left)
+    visit(node)                         // preorder: move this line up one
+    INORDER(node.right)                 // postorder: move it down one
+
+LEVEL-ORDER(root):
+    queue = [root]
+    while queue is not empty:
+        node = DEQUEUE(queue)
+        visit(node)
+        if node.left != None:  ENQUEUE(queue, node.left)
+        if node.right != None: ENQUEUE(queue, node.right)
+
+HEIGHT(node):
+    if node == None:
+        return 0
+    return 1 + max(HEIGHT(node.left), HEIGHT(node.right))
+```
+
+## Python
+
+<Code code={src} lang="python" title="trees.py" />
+
+## Complexity
+
+`n` is the number of nodes. `h` is the height.
+
+| Operation | Time | Space | Why |
+| --- | --- | --- | --- |
+| Pre-, in-, postorder | O(n) | O(h) | Each node once. The [call stack](../../foundations/recursion/) holds one frame per level. |
+| Level order | O(n) | O(w) | Each node once. The queue holds up to one level: `w` is the widest level. |
+| Height | O(n) | O(h) | Visits every node. |
+
+`h` is about `log n` for a balanced tree, but can be `n` for a tree that is one long chain.
+
+## Gotchas
+
+- **Tall trees break recursion.** A tree shaped like a chain of 1,000+ nodes hits Python's recursion limit. Use a loop with your own stack for trees that might be that deep.
+- **Check for `None` before following a link.** Every leaf has two `None` children. The base case handles them.
+- **Level order needs a queue.** With a stack instead, you get a depth-first order, not level by level.
+- **Height has two definitions.** Levels or links: check which one a problem uses. Off-by-one answers often come from mixing them.
+
+## In practice
+
+- Python has no built-in tree type. A small node class like `TreeNode` is the normal way to build one.
+- Trees are everywhere: folders on disk, HTML pages (the DOM), JSON documents, and the code Python itself parses (`ast` module).
+- Most tree problems are a traversal plus a little work at each node. First decide which order gives each node the information it needs.

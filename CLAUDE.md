@@ -35,4 +35,7 @@ Read-only commands like `git status`, `git diff` and `git log` are fine.
 ## Commands
 - Dev server: `npx astro dev --background` (manage with `astro dev stop|status|logs`).
 - Build: `npm run build`. Tests: `.venv/Scripts/python -m pytest`.
-- CI (`.github/workflows/deploy.yml`) runs pytest, then builds, then deploys. Failing tests block the deploy.
+- Link check: `python scripts/check_links.py` after a build. Fails on links to pages that don't exist yet
+  (e.g. a lesson that isn't written). Link only to written lessons; use plain text for the rest.
+- CI (`.github/workflows/deploy.yml`) runs pytest, then builds, then checks links, then deploys.
+  Failing tests or broken links block the deploy.
