@@ -1,0 +1,94 @@
+---
+title: Backtracking
+description: Build answers one choice at a time, and undo each choice to try the next. Subsets, permutations, and N-Queens.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import TreeFigure from '../../../components/TreeFigure.astro';
+import src from '../../../../python/dsa/backtracking.py?raw';
+
+## What it is
+
+Backtracking finds every answer, or the best one, by trying choices one at a time. Make a choice, explore everything that follows from it, then **undo** the choice and try the next one.
+
+It is [depth-first search](../../algorithms/dfs/) over a tree of choices, usually written with [recursion](../../foundations/recursion/). Every backtracking function has the same three steps: **choose, explore, un-choose**.
+
+## How it works
+
+### Every subset of [1, 2, 3]
+
+At each step, choose which item to add next, only from items after the last one added. That way, each subset is built in exactly one order.
+
+<TreeFigure
+	tree={{
+		label: '·',
+		children: [
+			{ label: '1', children: [{ label: '12', children: [{ label: '123' }] }, { label: '13' }] },
+			{ label: '2', children: [{ label: '23' }] },
+			{ label: '3' },
+		],
+	}}
+	caption="the choice tree · each node is one subset, · is the empty set"
+	note="DFS visits the nodes in order: · 1 12 123 13 2 23 3. All 8 subsets."
+/>
+
+The code keeps a single list, `current`. Going down the tree appends an item. Coming back up pops it off. That pop is the "backtrack". It restores `current` to exactly what it was, so the next choice starts clean.
+
+Because `current` keeps changing, the code saves a **copy** of it (`current[:]`) whenever it records an answer.
+
+### Pruning: N-Queens
+
+Place `n` queens on an `n × n` chessboard so that no two share a row, column, or diagonal. Place one queen per row. Before placing one, check whether the square is attacked. If it is, skip it and everything that would follow from it. This is called **pruning**.
+
+```text title="a solution for n = 4"
+. Q . .
+. . . Q
+Q . . .
+. . Q .
+```
+
+The board has `C(64, 8)`, about 4.4 billion, ways to place 8 queens. Pruning skips nearly all of them and finds the 92 solutions in a fraction of a second.
+
+The code tracks attacked columns and diagonals in [sets](../../data-structures/hash-map/), so each check is O(1). Squares on the same diagonal share `row − col`. Squares on the other diagonal share `row + col`.
+
+## Pseudocode
+
+```text title="Pseudocode"
+BACKTRACK(current):
+    if current is a full answer:
+        record a copy of current
+        return
+    for each choice that is allowed:
+        apply choice to current         // choose
+        BACKTRACK(current)              // explore
+        undo choice                     // un-choose
+```
+
+## Python
+
+<Code code={src} lang="python" title="backtracking.py" />
+
+## Complexity
+
+Backtracking is slow by nature: the number of answers is often exponential.
+
+| Function | Time | Why |
+| --- | --- | --- |
+| `subsets` | O(n · 2ⁿ) | 2ⁿ subsets, each up to `n` items to copy. |
+| `permutations` | O(n · n!) | n! orderings, each `n` items to copy. |
+| `count_queens` | below O(n!) | At most `n` choices in row 1, `n − 1` in row 2, and so on. Pruning cuts far more. |
+
+Space is O(n) for the recursion and `current`, plus the output.
+
+## Gotchas
+
+- **Record a copy.** Appending `current` itself stores a reference to a list that keeps changing. At the end, every recorded answer would be the same empty list.
+- **Undo exactly what you did.** Every change in the "choose" step needs a matching undo. Forget one, and later branches start from a broken state.
+- **Prune early.** Check a choice before recursing into it, not after building a full answer. That's the difference between seconds and hours.
+- **Watch for duplicates.** If the input has repeated values, sort it and skip a value that equals the one before it at the same level. Otherwise you'll get duplicate answers.
+
+## In practice
+
+- Use backtracking when a problem asks for **all** combinations, arrangements or paths, or the best one among them: Sudoku, word search, placing items under rules.
+- For plain subsets and orderings, Python's `itertools.combinations` and `itertools.permutations` are faster and simpler.
+- If a backtracking solution solves the same smaller problem many times, [dynamic programming](../dynamic-programming/) may do it far faster.

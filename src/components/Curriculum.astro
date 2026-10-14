@@ -11,7 +11,17 @@ const writtenCount = topics.filter((t) => written.has(t.slug)).length;
 ---
 
 <p class="vd-count not-content">
-	<strong>{writtenCount}</strong> of {topics.length} lessons written. New lessons are added in this order.
+	{
+		writtenCount === topics.length ? (
+			<>
+				<strong>{topics.length}</strong> lessons, in learning order.
+			</>
+		) : (
+			<>
+				<strong>{writtenCount}</strong> of {topics.length} lessons written. New lessons are added in this order.
+			</>
+		)
+	}
 </p>
 
 <ol class="vd-toc not-content">

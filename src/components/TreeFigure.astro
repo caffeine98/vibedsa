@@ -26,7 +26,8 @@ const { tree, caption, note } = Astro.props;
 
 const UNIT = 52; // horizontal space per leaf slot
 const LEVEL = 66; // vertical space per level
-const BOX = 34; // node size
+const BOX = 34; // node height, and minimum width
+const boxWidth = (label: string | number) => Math.max(BOX, String(label).length * 9.5 + 12);
 const PAD = 8;
 
 const width = (n: TreeNodeSpec | null): number =>
@@ -74,10 +75,10 @@ const svgHeight = depth * LEVEL + BOX + PAD * 2;
 			{
 				nodes.map(({ node, x, y }) => (
 					<g class:list={['vd-tree__node', { 'is-active': node.active, 'is-mark': node.mark, 'is-dim': node.dim }]}>
-						<rect x={x - BOX / 2} y={y - BOX / 2} width={BOX} height={BOX} />
+						<rect x={x - boxWidth(node.label) / 2} y={y - BOX / 2} width={boxWidth(node.label)} height={BOX} />
 						<text x={x} y={y}>{node.label}</text>
 						{node.note !== undefined && (
-							<text class="vd-tree__note" x={x + BOX / 2 + 4} y={y + BOX / 2 - 4}>
+							<text class="vd-tree__note" x={x + boxWidth(node.label) / 2 + 4} y={y + BOX / 2 - 4}>
 								{node.note}
 							</text>
 						)}

@@ -1,0 +1,91 @@
+---
+title: Greedy algorithms
+description: Take the choice that looks best right now and never revisit it. Fast and simple, but only right for some problems.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/greedy.py?raw';
+
+## What it is
+
+A greedy algorithm builds an answer step by step. At each step it takes the choice that looks best right now, and it never goes back to change it.
+
+That makes greedy algorithms fast and short. The catch: for many problems the best-looking step leads to a worse answer overall. A greedy rule is only correct if you can show why it never hurts.
+
+You've already seen some: [Dijkstra](../../algorithms/dijkstra/) always settles the closest node, and [Kruskal and Prim](../../algorithms/mst/) always add the cheapest safe edge.
+
+## How it works
+
+### When greedy works: scheduling meetings
+
+You have one room and a list of meetings `(start, end)`. Fit in as many as possible without overlaps.
+
+**Greedy rule:** always take the meeting that **ends first**, among those that start after the room is free.
+
+<div class="vd-trace">
+
+| meeting (by end time) | room free at | take? |
+| --- | --- | --- |
+| (1, 4) | – | yes: room free at 4 |
+| (3, 5), (0, 6) | 4 | no: start before 4 |
+| (5, 7) | 4 | yes: room free at 7 |
+| (3, 9), (5, 9), (6, 10) | 7 | no |
+| (8, 11) | 7 | yes: room free at 11 |
+| (8, 12), (2, 14) | 11 | no |
+| (12, 16) | 11 | yes |
+
+</div>
+
+Four meetings, and no schedule fits more.
+
+**Why it's safe:** take any best schedule. Swap its first meeting for the one that ends earliest. That one ends no later, so it can't clash with anything after it. The schedule is still valid and just as long. Repeat for each meeting, and the best schedule turns into the greedy one. This kind of proof is called an **exchange argument**.
+
+Other rules that sound reasonable fail. "Earliest start first" with meetings (0, 10), (1, 2), (3, 4) takes the long meeting and fits only 1, but 2 is possible.
+
+### When greedy fails: making change
+
+Pay an amount with the fewest coins. **Greedy rule:** use the biggest coin that fits, again and again.
+
+- With coins 1, 5, 10, 25, it's always right. 63 = 25 + 25 + 10 + 1 + 1 + 1.
+- With coins 1, 3, 4 and amount 6, greedy picks 4 + 1 + 1, which is 3 coins. But 3 + 3 uses only 2.
+
+The big coin looked best, but it left an awkward remainder. Solving this correctly for every coin set takes [dynamic programming](../dynamic-programming/).
+
+## Pseudocode
+
+```text title="Pseudocode"
+MAX-MEETINGS(meetings):
+    sort meetings by end time
+    free_at = -infinity
+    chosen = empty list
+    for each (start, end) in meetings:
+        if start >= free_at:
+            append (start, end) to chosen
+            free_at = end
+    return chosen
+```
+
+## Python
+
+<Code code={src} lang="python" title="greedy.py" />
+
+## Complexity
+
+| Function | Time | Why |
+| --- | --- | --- |
+| `max_meetings` | O(n log n) | Sorting. The scan after it is O(n). |
+| `greedy_coins` | O(c log c + answer) | Sort the `c` coins, then one step per coin used. |
+
+Most greedy algorithms are "sort, then one pass", so O(n log n) is typical.
+
+## Gotchas
+
+- **Test greedy against brute force.** It's easy to find a rule that works on examples and fails on some case. Compare against a slow, sure answer on many small random inputs, as this lesson's tests do.
+- **The sort key is the whole algorithm.** Ending first works for meetings. Starting first or shortest first doesn't. Changing the key changes the answer.
+- **Greedy gives one answer.** If you need all answers, or a count of them, you need [backtracking](../backtracking/) or dynamic programming.
+
+## In practice
+
+- Try greedy first when each step has a clear "best" choice and the problem smells like scheduling, picking intervals, or choosing the cheapest option. Then try to break it.
+- If you find a counterexample, the problem probably needs dynamic programming: the best choice now depends on the choices still to come.
+- Well-known greedy algorithms include Dijkstra, Kruskal, Prim, and Huffman coding (used in file compression).

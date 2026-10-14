@@ -1,0 +1,86 @@
+---
+title: Prefix sums
+description: Precompute running totals once, then answer any range sum in O(1). Plus counting subarrays with a given sum.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/prefix_sums.py?raw';
+
+## What it is
+
+A prefix sum array stores running totals: `prefix[i]` is the sum of the first `i` items. Build it once in O(n). After that, the sum of **any** range takes one subtraction: O(1).
+
+## How it works
+
+<ArrayFigure values={[3, 1, 4, 1, 5, 9]} caption="nums" active={[1, 2, 3]} />
+
+<ArrayFigure
+	values={[0, 3, 4, 8, 9, 14, 23]}
+	caption="prefix · prefix[i] = sum of the first i items"
+	pointers={{ 1: 'i', 4: 'j + 1' }}
+	active={[1, 4]}
+	note="Sum of nums[1..3] = prefix[4] − prefix[1] = 9 − 3 = 6. That's 1 + 4 + 1."
+/>
+
+`prefix` has one more slot than `nums` and starts at 0. Then:
+
+```text
+sum of nums[i..j] = prefix[j + 1] − prefix[i]
+```
+
+`prefix[j + 1]` is everything up to and including `j`. Subtracting `prefix[i]` removes everything before `i`. The leading 0 means ranges that start at index 0 need no special case.
+
+### Counting runs that add up to k
+
+How many runs of neighbors in `[1, 2, 3, -2, 2]` sum to exactly 3? A run from `i` to `j` sums to `k` exactly when `prefix[j + 1] − prefix[i] = k`. Rearranged, that's `prefix[i] = prefix[j + 1] − k`.
+
+So scan once, keeping a running total and a [dict](../../data-structures/hash-map/) of how many times each running total has appeared so far. At each item, add the number of earlier totals equal to `running − k`. Here that finds 4 runs: `[1, 2]`, `[3]`, `[2, 3, -2]` and `[3, -2, 2]`.
+
+This works with negative numbers, where a [sliding window](../sliding-window/) doesn't.
+
+## Pseudocode
+
+```text title="Pseudocode"
+BUILD-PREFIX(nums):
+    prefix = [0]
+    for each x in nums:
+        append (last item of prefix) + x to prefix
+    return prefix
+
+COUNT-RUNS-WITH-SUM(nums, k):
+    seen = { 0: 1 }                     // running total -> times seen
+    running = 0
+    count = 0
+    for each x in nums:
+        running = running + x
+        count = count + seen[running - k]   // 0 if missing
+        seen[running] = seen[running] + 1
+    return count
+```
+
+## Python
+
+<Code code={src} lang="python" title="prefix_sums.py" />
+
+## Complexity
+
+| Operation | Time | Space | Why |
+| --- | --- | --- | --- |
+| Build prefix array | O(n) | O(n) | One pass. |
+| Range sum | O(1) | – | One subtraction. |
+| Count runs with sum k | O(n) | O(n) | One pass. The dict can hold `n` different totals. |
+
+Without prefix sums, `q` range sums cost O(n · q). With them, the total is O(n + q).
+
+## Gotchas
+
+- **Off by one.** `prefix` is one longer than `nums`. The sum of `nums[i..j]` is `prefix[j + 1] − prefix[i]`, not `prefix[j] − prefix[i]`.
+- **Start the dict with `{0: 1}`.** That accounts for runs that start at index 0. Without it, the count misses them.
+- **Changes are slow.** If `nums` changes, every prefix after that point changes too: O(n). For many updates mixed with many queries, use a Fenwick tree or a segment tree.
+
+## In practice
+
+- Use it for many range-sum questions on data that doesn't change, and for "count or find runs with sum k" problems.
+- The same idea works in 2D. Store `prefix[r][c]` as the sum of the rectangle above and to the left, and any rectangle's sum takes four lookups.
+- `itertools.accumulate(nums, initial=0)` builds the prefix array in one line.

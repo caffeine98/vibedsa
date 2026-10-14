@@ -1,0 +1,91 @@
+---
+title: Sliding window
+description: Track a run of neighboring items as it moves along, updating the answer as items enter and leave. O(n) instead of O(n²).
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/sliding_window.py?raw';
+
+## What it is
+
+A **window** is a run of neighboring items: a slice like `nums[left..right]`. The sliding window pattern moves that window along the data and keeps a running answer up to date. It never recomputes the whole window from scratch.
+
+When an item enters on the right, add it. When an item leaves on the left, remove it. Each item enters once and leaves once, so the whole pass is O(n).
+
+## How it works
+
+### Fixed size: best sum of k neighbors
+
+Find the largest sum of 3 items in a row in `[2, 1, 5, 1, 3, 2]`. Adding up every window separately costs O(n · k). Instead, slide: add the item that enters, subtract the one that leaves.
+
+<ArrayFigure
+	values={[2, 1, 5, 1, 3, 2]}
+	caption="window of 3, at its best position: 5 + 1 + 3 = 9"
+	pointers={{ 2: 'left', 4: 'right' }}
+	active={[2, 3, 4]}
+	note="Window sums as it slides: 8, 7, 9, 6. Each new sum = old sum + entering item − leaving item."
+/>
+
+### Variable size: longest run with no repeats
+
+Find the longest stretch of `abcabcbb` where no letter repeats. Grow the window by moving `right`. When the new letter is already inside the window, shrink it from the left: move `left` just past that letter's last position.
+
+<div class="vd-trace">
+
+| right | letter | left | window | best |
+| --- | --- | --- | --- | --- |
+| 0 | a | 0 | a | 1 |
+| 1 | b | 0 | ab | 2 |
+| 2 | c | 0 | abc | 3 |
+| 3 | a | 1 | bca | 3 |
+| 4 | b | 2 | cab | 3 |
+| 5 | c | 3 | abc | 3 |
+| 6 | b | 5 | cb | 3 |
+| 7 | b | 7 | b | 3 |
+
+</div>
+
+The answer is 3. The window never moves backward, so even with the shrinking, it's still one pass.
+
+The same grow-then-shrink loop finds the **shortest** window that meets a goal. For "shortest run with sum ≥ 7": grow until the sum is big enough, then shrink from the left while it stays big enough, recording the size each time.
+
+## Pseudocode
+
+```text title="Pseudocode"
+LONGEST-UNIQUE-RUN(text):
+    last_seen = empty map               // letter -> latest index
+    left = 0
+    best = 0
+    for right from 0 to text.length - 1:
+        ch = text[right]
+        if ch in last_seen and last_seen[ch] >= left:
+            left = last_seen[ch] + 1    // jump past the repeat
+        last_seen[ch] = right
+        best = max(best, right - left + 1)
+    return best
+```
+
+## Python
+
+<Code code={src} lang="python" title="sliding_window.py" />
+
+## Complexity
+
+| Function | Time | Space | Why |
+| --- | --- | --- | --- |
+| `max_window_sum` | O(n) | O(1) | One add and one subtract per step. |
+| `longest_unique_run` | O(n) | O(k) | `k` is the number of different letters stored in `last_seen`. |
+| `shortest_sum_at_least` | O(n) | O(1) | `left` and `right` each move forward at most `n` times. |
+
+## Gotchas
+
+- **Shrinking needs a rule that stays true.** The sum-based window only works if all numbers are positive. Then growing always raises the sum and shrinking always lowers it. With negative numbers, use [prefix sums](../prefix-sums/) instead.
+- **Only trust repeats inside the window.** In `longest_unique_run`, a letter seen *before* `left` doesn't count. That's why the check is `last_seen[ch] >= left`.
+- **Windows must be neighbors.** A sliding window works on runs of items next to each other. It doesn't handle "any 3 items" problems.
+
+## In practice
+
+Reach for a sliding window when a problem asks for the longest, shortest, or best **run of neighbors** (a substring or subarray) that meets a condition. Examples: the longest substring with at most `k` different letters, or the best sum of `k` days in a row.
+
+`collections.deque(maxlen=k)` keeps the last `k` items automatically, which is handy for fixed-size windows over a stream.

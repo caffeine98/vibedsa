@@ -1,0 +1,109 @@
+---
+title: Two pointers
+description: Walk two indexes through the data in one pass, from both ends or at two speeds. Turns many O(n²) searches into O(n).
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/two_pointers.py?raw';
+
+## What it is
+
+Two pointers means keeping two indexes into the same list or string and moving them by a rule, in a single pass. It replaces a nested loop that checks every pair. That often turns O(n²) into O(n).
+
+There are two common shapes:
+
+- **From both ends:** one pointer starts at the front, one at the back, and they move toward each other.
+- **Same direction:** both start at the front and move forward. One leads and the other follows, or one moves faster than the other.
+
+## How it works
+
+### From both ends: a pair with a given sum
+
+Find two numbers in the **sorted** list `[1, 3, 4, 6, 8, 11]` that add up to 10.
+
+Start with the smallest and the biggest. If their sum is too big, the biggest number is useless: even paired with the smallest number, it's too big. Drop it by moving `hi` left. If the sum is too small, the smallest number is useless for the same reason. Move `lo` right.
+
+<div class="vd-trace">
+
+| lo | hi | A[lo] + A[hi] | action |
+| --- | --- | --- | --- |
+| 0 | 5 | 1 + 11 = 12 | too big: hi = 4 |
+| 0 | 4 | 1 + 8 = 9 | too small: lo = 1 |
+| 1 | 4 | 3 + 8 = 11 | too big: hi = 3 |
+| 1 | 3 | 3 + 6 = 9 | too small: lo = 2 |
+| 2 | 3 | 4 + 6 = 10 | found it |
+
+</div>
+
+<ArrayFigure
+	values={[1, 3, 4, 6, 8, 11]}
+	caption="found: 4 + 6 = 10"
+	pointers={{ 2: 'lo', 3: 'hi' }}
+	active={[2, 3]}
+	dimmed={[0, 1, 4, 5]}
+	note="Each step ruled out one number for good. That's at most n steps."
+/>
+
+Checking palindromes works the same way: compare the two ends, then move both inward.
+
+### Same direction: removing duplicates in place
+
+In a sorted list, `read` scans every item. `write` marks where the next new value goes. When `read` finds a value different from the last one kept, copy it to `write` and move `write` forward. `[1, 1, 2, 3, 3, 3, 5]` becomes `[1, 2, 3, 5]` with no extra list.
+
+### Two speeds: a loop in a linked list
+
+Move `slow` one node per step and `fast` two. If the [linked list](../../data-structures/linked-list/) ends, there's no loop. If it loops back, `fast` eventually laps `slow` and they land on the same node. This is **Floyd's cycle detection**, and it needs no extra memory.
+
+## Pseudocode
+
+```text title="Pseudocode"
+PAIR-WITH-SUM(A, target):               // A is sorted
+    lo = 0
+    hi = A.length - 1
+    while lo < hi:
+        s = A[lo] + A[hi]
+        if s == target: return (A[lo], A[hi])
+        if s < target: lo = lo + 1
+        else: hi = hi - 1
+    return None
+
+HAS-CYCLE(head):
+    slow = head
+    fast = head
+    while fast != None and fast.next != None:
+        slow = slow.next
+        fast = fast.next.next
+        if slow == fast: return true
+    return false
+```
+
+## Python
+
+<Code code={src} lang="python" title="two_pointers.py" />
+
+## Complexity
+
+| Function | Time | Space | Why |
+| --- | --- | --- | --- |
+| `pair_with_sum` | O(n) | O(1) | Each step moves one pointer inward. |
+| `is_palindrome` | O(n) | O(n) | One pass. The cleaned copy of the text takes O(n). |
+| `remove_duplicates` | O(n) | O(1) | `read` passes over each item once. |
+| `has_cycle` | O(n) | O(1) | `fast` catches `slow` within one trip around the loop. |
+
+## Gotchas
+
+- **From-both-ends needs order.** The pair-sum logic only works on sorted data. Sorting first costs O(n log n). For unsorted data, a [hash set](../../data-structures/hash-map/) of seen values solves pair-sum in O(n).
+- **`lo < hi`, not `lo <= hi`.** With `<=`, the pointers can meet and use the same item twice.
+- **Check `fast.next` before `fast.next.next`.** Otherwise `fast` runs off the end of a list with no loop and raises an error.
+
+## In practice
+
+Reach for two pointers when:
+
+- The input is sorted, and you're looking for a pair or triple with some property.
+- You need to compare the start and end of something, like a palindrome.
+- You need to change a list in place while scanning it.
+- You're working with a linked list and need the middle, a loop, or the k-th node from the end.
+
+The [sliding window](../sliding-window/) pattern is a close cousin: two pointers that mark the edges of a range.

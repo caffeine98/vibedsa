@@ -1,0 +1,125 @@
+---
+title: Dynamic programming in 2D
+description: When each smaller problem needs two numbers to describe it, the answers fill a grid. Longest common subsequence and 0/1 knapsack.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/dynamic_programming_2d.py?raw';
+
+## What it is
+
+Some problems need **two** numbers to describe each smaller problem. Typical cases are positions in two strings, or "the first `i` items with `c` capacity left". The saved answers then fill a 2D table.
+
+The method is the same as [part 1](../dynamic-programming/): define what an entry means, find how it follows from smaller entries, set base cases, and fill in order.
+
+## How it works
+
+### Longest common subsequence (LCS)
+
+A **subsequence** keeps some characters of a string, in order, but not necessarily next to each other. `ACE` is a subsequence of `ABCDE`. What's the longest subsequence that two strings share?
+
+**State:** `T[i][j]` = LCS length of the first `i` characters of `a` and the first `j` characters of `b`.
+
+**Recurrence:** look at the last character of each:
+
+- If they match, that character is part of the LCS: `T[i][j] = T[i − 1][j − 1] + 1`.
+- If not, at least one of them is unused. Drop either one and keep the better result: `T[i][j] = max(T[i − 1][j], T[i][j − 1])`.
+
+**Base cases:** row 0 and column 0 are 0. An empty string shares nothing.
+
+For `a = ABCDE` and `b = ACE`:
+
+<div class="vd-trace">
+
+| | – | A | C | E |
+| --- | --- | --- | --- | --- |
+| **–** | 0 | 0 | 0 | 0 |
+| **A** | 0 | 1 | 1 | 1 |
+| **B** | 0 | 1 | 1 | 1 |
+| **C** | 0 | 1 | 2 | 2 |
+| **D** | 0 | 1 | 2 | 2 |
+| **E** | 0 | 1 | 2 | 3 |
+
+</div>
+
+The answer is in the bottom-right corner: 3. To get the subsequence itself, walk back from that corner. On a match, take the character and move up-left. Otherwise, move toward the larger neighbor. That spells `ACE`.
+
+### 0/1 knapsack
+
+You have a bag that holds weight 7, and four items as `(weight, value)`: (1, 1), (3, 4), (4, 5), (5, 7). Each item is taken whole or left. What's the most value that fits?
+
+**State:** `T[i][c]` = best value using only the first `i` items, with capacity `c`.
+
+**Recurrence:** for item `i`, either skip it, or take it if it fits:
+
+```text
+T[i][c] = max( T[i − 1][c],                          skip item i
+               T[i − 1][c − weight] + value )         take it, if weight ≤ c
+```
+
+<div class="vd-trace">
+
+| items allowed | c=0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| none | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| + (1, 1) | 0 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| + (3, 4) | 0 | 1 | 1 | 4 | 5 | 5 | 5 | 5 |
+| + (4, 5) | 0 | 1 | 1 | 4 | 5 | 6 | 6 | 9 |
+| + (5, 7) | 0 | 1 | 1 | 4 | 5 | 7 | 8 | 9 |
+
+</div>
+
+The best is 9: items (3, 4) and (4, 5), with total weight 7. The item worth the most, (5, 7), isn't part of it. A greedy "most valuable first" rule would pick it and end up with only 8.
+
+## Pseudocode
+
+```text title="Pseudocode"
+LCS-LENGTH(a, b):
+    T = (a.length + 1) × (b.length + 1) table of zeros
+    for i from 1 to a.length:
+        for j from 1 to b.length:
+            if a[i - 1] == b[j - 1]:
+                T[i][j] = T[i - 1][j - 1] + 1
+            else:
+                T[i][j] = max(T[i - 1][j], T[i][j - 1])
+    return T[a.length][b.length]
+
+KNAPSACK(items, capacity):
+    T = (items.length + 1) × (capacity + 1) table of zeros
+    for i from 1 to items.length:
+        (w, v) = items[i - 1]
+        for c from 0 to capacity:
+            T[i][c] = T[i - 1][c]
+            if w <= c:
+                T[i][c] = max(T[i][c], T[i - 1][c - w] + v)
+    return T[items.length][capacity]
+```
+
+## Python
+
+<Code code={src} lang="python" title="dynamic_programming_2d.py" />
+
+## Complexity
+
+| Function | Time | Space | Why |
+| --- | --- | --- | --- |
+| LCS | O(n · m) | O(n · m) | One entry per pair of prefix lengths, O(1) work each. |
+| Knapsack | O(n · W) | O(n · W) | One entry per item and capacity, O(1) work each. |
+
+`n` and `m` are the string lengths, `n` the number of items, and `W` the capacity.
+
+Each row only reads the row above it. Keeping just one or two rows cuts the space to O(m) or O(W). For knapsack with a single row, loop the capacity **downward**, so each item is still used at most once.
+
+## Gotchas
+
+- **Index carefully.** Table index `i` means "the first `i` characters", so the matching character is `a[i − 1]`. Most bugs in 2D DP are off-by-one errors here.
+- **0/1 vs unlimited.** If each item could be taken any number of times, the "take" case would read from row `i`, not `i − 1`. Mixing them up changes the problem.
+- **Knapsack depends on `W`'s size, not its length.** O(n · W) looks fast, but a capacity of a billion means a billion columns. For huge capacities you need a different approach.
+- **Subsequence vs substring.** A substring has to be one unbroken run. That's a different table: on a mismatch the entry resets to 0 instead of taking the max.
+
+## In practice
+
+- **Edit distance** is the fewest inserts, deletes and replacements to turn one string into another, used by spell checkers. It's a close cousin of LCS, with the same table shape.
+- Diff tools, like `git diff`, are built on LCS-style comparisons. Python's `difflib` compares sequences with a related method.
+- Knapsack-style tables appear in budget problems: picking projects, packing cargo, or splitting a set into two equal halves.
+- Many grid problems are 2D DP: "how many paths from the top-left to the bottom-right?" or "the cheapest path through a grid of costs".

@@ -78,7 +78,8 @@ export const curriculum = [
 			{ title: 'Prefix sums', slug: 'patterns/prefix-sums' },
 			{ title: 'Backtracking', slug: 'patterns/backtracking' },
 			{ title: 'Greedy algorithms', slug: 'patterns/greedy' },
-			{ title: 'Dynamic programming', slug: 'patterns/dynamic-programming' },
+			{ title: 'Dynamic programming: the idea', slug: 'patterns/dynamic-programming' },
+			{ title: 'Dynamic programming in 2D', slug: 'patterns/dynamic-programming-2d' },
 		],
 	},
 ];
