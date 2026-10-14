@@ -1,0 +1,72 @@
+---
+title: Insertion sort
+description: Grow a sorted part on the left by sliding each new item into place. O(n²), but fast on small or nearly sorted lists.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/insertion_sort.py?raw';
+
+## What it is
+
+Insertion sort builds a sorted part at the start of the list, one item at a time. It takes the next item and slides it left until it sits in the right place. This is how most people sort a hand of cards.
+
+It's O(n²) in general, but very fast on small lists and on lists that are almost sorted.
+
+## How it works
+
+Sort `[5, 2, 4, 6, 1, 3]`. The `|` separates the sorted part (left) from the rest.
+
+<div class="vd-trace">
+
+| step | insert | list after | what happened |
+| --- | --- | --- | --- |
+| 1 | 2 | 2 5 \| 4 6 1 3 | 5 shifts right, 2 goes in front |
+| 2 | 4 | 2 4 5 \| 6 1 3 | 5 shifts right |
+| 3 | 6 | 2 4 5 6 \| 1 3 | Already in place. Nothing moves. |
+| 4 | 1 | 1 2 4 5 6 \| 3 | All four shift right |
+| 5 | 3 | 1 2 3 4 5 6 | 4, 5 and 6 shift right |
+
+</div>
+
+Each item moves only as far as it is out of place. Step 3 cost one comparison. That's why nearly sorted input is fast.
+
+The items **shift** rather than swap. The code saves the item being inserted, moves bigger items one slot right, then drops the saved item into the gap. That's one write per move instead of three for a swap.
+
+## Pseudocode
+
+```text title="Pseudocode"
+INSERTION-SORT(A):
+    for i from 1 to A.length - 1:
+        current = A[i]
+        j = i - 1
+        while j >= 0 and A[j] > current:
+            A[j + 1] = A[j]             // shift right
+            j = j - 1
+        A[j + 1] = current              // drop into the gap
+```
+
+## Python
+
+<Code code={src} lang="python" title="insertion_sort.py" />
+
+## Complexity
+
+| Case | Time | Why |
+| --- | --- | --- |
+| Best | O(n) | Already sorted: each item is compared once and stays put. |
+| Average | O(n²) | Each item shifts past about half of the sorted part. |
+| Worst | O(n²) | Reversed input: each item shifts all the way to the front. |
+
+Space is O(1): it sorts in place. It is stable: an item stops at the first item that is not bigger, so it never passes an equal one.
+
+## Gotchas
+
+- **Check `j >= 0` first.** If `A[j] > current` ran first with `j = -1`, Python would read `A[-1]`, the *last* item, instead of raising an error. The `and` stops early, so order matters.
+- **Use `>`, not `>=`.** With `>=`, equal items pass each other and the sort is no longer stable.
+- **Don't confuse it with bubble sort.** Both are O(n²), but insertion sort does far fewer writes and stops early on each item.
+
+## In practice
+
+- For small lists (up to a few dozen items), insertion sort often beats O(n log n) sorts. It has almost no overhead.
+- Python's built-in sort (Timsort) uses insertion sort on short runs, then [merges](../merge-sort/) them.
+- If items arrive one at a time and you need the list sorted after each one, this is insertion sort. `bisect.insort(a, x)` does it for you.

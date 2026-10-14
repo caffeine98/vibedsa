@@ -210,7 +210,6 @@ h1,
 	font-size: var(--sl-text-sm);
 }
 .vd-trace td:last-child {
-	font-family: var(--sl-font);
 	color: var(--sl-color-gray-2);
 }
 

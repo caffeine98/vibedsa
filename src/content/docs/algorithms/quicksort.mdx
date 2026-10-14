@@ -1,0 +1,115 @@
+---
+title: Quicksort
+description: Pick a pivot, split the items into smaller, equal and bigger groups, then sort the groups. O(n log n) on average, in place.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import ArrayFigure from '../../../components/ArrayFigure.astro';
+import src from '../../../../python/dsa/quicksort.py?raw';
+
+## What it is
+
+Quicksort picks one item, the **pivot**. It rearranges the list into three groups: items smaller than the pivot, items equal to it, and items bigger than it. Then it sorts the smaller and bigger groups the same way, [recursively](../../foundations/recursion/).
+
+There's no merge step. Once the groups are in place, every smaller item is already left of every bigger one.
+
+It's O(n log n) on average and sorts in place.
+
+## How it works
+
+### Partition
+
+Splitting the list into the three groups is called **partitioning**. Here is `[7, 2, 9, 4, 7, 1, 8]` partitioned around the pivot `7`:
+
+<ArrayFigure
+	values={[2, 1, 4, 7, 7, 8, 9]}
+	caption="after partitioning around 7"
+	pointers={{ 0: '< 7', 3: '= 7', 5: '> 7' }}
+	active={[3, 4]}
+	note="The two 7s are in their final places. Only [2, 1, 4] and [8, 9] still need sorting."
+/>
+
+The partition does this in one pass, with three pointers:
+
+- Everything before `lt` is smaller than the pivot.
+- Everything from `lt` to just before `i` equals the pivot.
+- Everything after `gt` is bigger than the pivot.
+- Items from `i` to `gt` haven't been checked yet.
+
+Look at `A[i]`. If it's smaller, swap it to `lt`. If it's bigger, swap it to `gt`. If it's equal, leave it. Stop when `i` passes `gt`.
+
+<div class="vd-trace">
+
+| A[i] | action | list after | lt | i | gt |
+| --- | --- | --- | --- | --- | --- |
+| 7 | equal: move on | 7 2 9 4 7 1 8 | 0 | 1 | 6 |
+| 2 | smaller: swap to lt | 2 7 9 4 7 1 8 | 1 | 2 | 6 |
+| 9 | bigger: swap to gt | 2 7 8 4 7 1 9 | 1 | 2 | 5 |
+| 8 | bigger: swap to gt | 2 7 1 4 7 8 9 | 1 | 2 | 4 |
+| 1 | smaller: swap to lt | 2 1 7 4 7 8 9 | 2 | 3 | 4 |
+| 4 | smaller: swap to lt | 2 1 4 7 7 8 9 | 3 | 4 | 4 |
+| 7 | equal: move on | 2 1 4 7 7 8 9 | 3 | 5 | 4 |
+
+</div>
+
+After a swap to `gt`, `i` stays put. The item swapped in hasn't been checked yet. You can see this in rows 3 and 4.
+
+### Choosing the pivot
+
+A good pivot splits the list into two similar halves, giving `log n` levels of work. A bad pivot, the smallest or biggest item, splits off nothing. Do that every time and quicksort becomes O(n²).
+
+If you always pick the first or last item, an already sorted list hits that bad case on every split. Picking the pivot **at random** means no input is reliably slow. The chance of bad pivots over and over is tiny.
+
+## Pseudocode
+
+```text title="Pseudocode"
+QUICKSORT(A, lo, hi):
+    if lo >= hi:
+        return
+    pivot = A[random index from lo to hi]
+    lt, gt = PARTITION(A, lo, hi, pivot)
+    QUICKSORT(A, lo, lt - 1)            // smaller group
+    QUICKSORT(A, gt + 1, hi)            // bigger group
+
+PARTITION(A, lo, hi, pivot):
+    lt = lo
+    i = lo
+    gt = hi
+    while i <= gt:
+        if A[i] < pivot:
+            swap A[lt] and A[i]
+            lt = lt + 1
+            i = i + 1
+        else if A[i] > pivot:
+            swap A[i] and A[gt]
+            gt = gt - 1
+        else:
+            i = i + 1
+    return lt, gt
+```
+
+## Python
+
+<Code code={src} lang="python" title="quicksort.py" />
+
+## Complexity
+
+| Case | Time | Why |
+| --- | --- | --- |
+| Best, average | O(n log n) | Pivots split the list roughly in half, so about `log n` levels of O(n) partitioning. |
+| Worst | O(n²) | Every pivot is the smallest or biggest item. A random pivot makes this extremely unlikely. |
+
+Space is O(log n) on average, for the recursion. It is **not** stable: the long-distance swaps can move an item past an equal one.
+
+## Gotchas
+
+- **A fixed pivot breaks on sorted input.** First-item or last-item pivots make sorted or reversed lists O(n²). The recursion also goes `n` deep, so Python raises `RecursionError` at around 1,000 items.
+- **Duplicates need the "equal" group.** The common two-way partition (smaller vs. not smaller) puts equal items in one side. A list of all-equal items then becomes O(n²). The three-way partition here finishes it in one pass.
+- **Don't move `i` after swapping with `gt`.** The item that came from `gt` hasn't been checked yet.
+- **It isn't stable.** If you need equal items to keep their order, use [merge sort](../merge-sort/).
+
+## In practice
+
+- Python doesn't use quicksort. Its built-in sort is Timsort, a stable merge sort.
+- C++'s `std::sort` and many C libraries use quicksort variants. It sorts in place and reads memory mostly in order, so it is often the fastest general sort in practice.
+- The same partition step finds the `k`-th smallest item in O(n) on average. Partition, then recurse into only the group that holds position `k`. This is called **quickselect**.

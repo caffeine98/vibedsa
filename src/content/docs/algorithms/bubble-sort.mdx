@@ -1,0 +1,85 @@
+---
+title: Bubble sort
+description: Swap neighbors that are out of order until a full pass makes no swaps. Simple, stable, and O(n²).
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/bubble_sort.py?raw';
+
+## What it is
+
+Bubble sort walks through the list and swaps any two neighbors that are out of order. After each pass, the biggest remaining item has "bubbled up" to the end. It repeats until a pass makes no swaps.
+
+It is slow: O(n²). It's worth knowing because it's the simplest sort, and a baseline for the faster ones.
+
+## How it works
+
+Sort `[5, 1, 4, 2, 8]`. The first pass compares each pair of neighbors:
+
+<div class="vd-trace">
+
+| compare | swap? | list after |
+| --- | --- | --- |
+| 5 and 1 | yes | 1 5 4 2 8 |
+| 5 and 4 | yes | 1 4 5 2 8 |
+| 5 and 2 | yes | 1 4 2 5 8 |
+| 5 and 8 | no | 1 4 2 5 8 |
+
+</div>
+
+The biggest item, `8`, is now in its final place. The next pass can stop one slot earlier. Here are all the passes (`|` marks the part that is done):
+
+<div class="vd-trace">
+
+| pass | list after | note |
+| --- | --- | --- |
+| 1 | 1 4 2 5 \| 8 | 8 is in place |
+| 2 | 1 2 4 \| 5 8 | 5 is in place |
+| 3 | 1 2 4 5 8 | No swaps, so the list is sorted. Stop. |
+
+</div>
+
+### Stable sorts
+
+A sort is **stable** if equal items keep their original order. This matters when you sort records by one field. Sort people by age, and two people of the same age stay in the order they were in.
+
+Bubble sort is stable. It only swaps when the left item is strictly bigger, so equal items never pass each other.
+
+## Pseudocode
+
+```text title="Pseudocode"
+BUBBLE-SORT(A):
+    for end from A.length - 1 down to 1:
+        swapped = false
+        for i from 0 to end - 1:
+            if A[i] > A[i + 1]:
+                swap A[i] and A[i + 1]
+                swapped = true
+        if not swapped:
+            return                      // no swaps: already sorted
+```
+
+## Python
+
+<Code code={src} lang="python" title="bubble_sort.py" />
+
+## Complexity
+
+| Case | Time | Why |
+| --- | --- | --- |
+| Best | O(n) | Already sorted: one pass, no swaps, stop. |
+| Average, worst | O(n²) | Up to `n - 1` passes, each up to `n - 1` comparisons. |
+
+Space is O(1): it sorts in place. It is stable.
+
+## Gotchas
+
+- **Without the early stop, the best case is O(n²) too.** The `swapped` flag is what makes sorted input fast.
+- **Use `>`, not `>=`.** Swapping equal items does extra work and breaks stability.
+- **Shrink the inner loop.** After pass `k`, the last `k` items are in place. Checking them again wastes time.
+
+## In practice
+
+Don't use bubble sort for real work. Use `sorted(items)` or `items.sort()`, which run in O(n log n).
+
+If you need a simple O(n²) sort, [insertion sort](../insertion-sort/) does the same job with fewer steps. It is also fast on nearly sorted input.

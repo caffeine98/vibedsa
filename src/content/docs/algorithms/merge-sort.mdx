@@ -1,0 +1,104 @@
+---
+title: Merge sort
+description: Split the list in half, sort each half, then merge the two sorted halves. O(n log n) every time, and stable.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/merge_sort.py?raw';
+
+## What it is
+
+Merge sort splits the list in half, sorts each half, then merges the two sorted halves into one. Sorting each half uses the same steps, so it's [recursive](../../foundations/recursion/). A list of 0 or 1 items is already sorted, which is the base case.
+
+It always runs in O(n log n). This approach, breaking a problem into smaller copies of itself and combining the answers, is called **divide and conquer**.
+
+## How it works
+
+### Split, then merge
+
+```text title="merge_sort([38, 27, 43, 3, 9, 82, 10])"
+split:  [38, 27, 43]              [3, 9, 82, 10]
+split:  [38]  [27, 43]            [3, 9]   [82, 10]
+split:        [27] [43]           [3] [9]  [82] [10]
+merge:  [38]  [27, 43]            [3, 9]   [10, 82]
+merge:  [27, 38, 43]              [3, 9, 10, 82]
+merge:  [3, 9, 10, 27, 38, 43, 82]
+```
+
+All the real work happens in the merges.
+
+### Merging two sorted lists
+
+Both lists are sorted, so the smallest remaining item is always at the front of one of them. Compare the two fronts, take the smaller, and repeat. When one list runs out, copy the rest of the other.
+
+<div class="vd-trace">
+
+| left | right | compare | take | result |
+| --- | --- | --- | --- | --- |
+| 27 38 43 | 3 9 10 82 | 27 vs 3 | 3 | 3 |
+| 27 38 43 | 9 10 82 | 27 vs 9 | 9 | 3 9 |
+| 27 38 43 | 10 82 | 27 vs 10 | 10 | 3 9 10 |
+| 27 38 43 | 82 | 27 vs 82 | 27 | 3 9 10 27 |
+| 38 43 | 82 | 38 vs 82 | 38 | 3 9 10 27 38 |
+| 43 | 82 | 43 vs 82 | 43 | 3 9 10 27 38 43 |
+| | 82 | left is empty | 82 | 3 9 10 27 38 43 82 |
+
+</div>
+
+Each step takes one item, so merging `n` items takes O(n).
+
+### Why O(n log n)
+
+Halving `n` items down to single items takes about `log n` levels of splits. At every level, the merges handle all `n` items once in total. That's `n` work on each of `log n` levels: O(n log n).
+
+## Pseudocode
+
+```text title="Pseudocode"
+MERGE-SORT(A):
+    if A.length <= 1:
+        return A
+    mid = floor(A.length / 2)
+    left = MERGE-SORT(A[0 .. mid - 1])
+    right = MERGE-SORT(A[mid .. A.length - 1])
+    return MERGE(left, right)
+
+MERGE(left, right):
+    result = empty list
+    i = 0
+    j = 0
+    while i < left.length and j < right.length:
+        if left[i] <= right[j]:         // <= keeps it stable
+            append left[i] to result
+            i = i + 1
+        else:
+            append right[j] to result
+            j = j + 1
+    append the rest of left, then the rest of right, to result
+    return result
+```
+
+## Python
+
+This version returns a new list and leaves the input alone.
+
+<Code code={src} lang="python" title="merge_sort.py" />
+
+## Complexity
+
+| Case | Time | Why |
+| --- | --- | --- |
+| Best, average, worst | O(n log n) | Always `log n` levels, with O(n) merging per level. The input order doesn't matter. |
+
+Space is O(n) for the merged lists. The recursion is only `log n` deep, so the call stack is small. It is stable.
+
+## Gotchas
+
+- **Use `<=` in the merge.** When the two fronts are equal, take from the left list first. With `<`, equal items swap order and the sort is no longer stable.
+- **Don't forget the leftovers.** When one list runs out, the rest of the other must still be copied over.
+- **It needs extra memory.** Unlike insertion sort or quicksort, it can't sort in place easily. For a huge list, that O(n) extra space matters.
+
+## In practice
+
+- Python's `sorted()` and `list.sort()` use **Timsort**, a merge sort that first finds runs that are already in order. It's stable and O(n log n), and close to O(n) on nearly sorted data.
+- Merge sort works well on [linked lists](../../data-structures/linked-list/). Merging only walks forward, and it relinks the existing nodes, so no extra lists are needed.
+- For data too big to fit in memory, sort chunks that do fit, then merge the sorted chunks. `heapq.merge()` merges sorted inputs lazily.

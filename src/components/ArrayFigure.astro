@@ -7,13 +7,14 @@ interface Props {
 	note?: string;
 	/** index -> label shown under that cell, e.g. { 3: 'mid' } */
 	pointers?: Record<number, string>;
-	/** index of the cell to highlight */
-	active?: number;
+	/** index (or indexes) of the cells to highlight */
+	active?: number | number[];
 	/** indexes of cells that are out of play */
 	dimmed?: number[];
 }
 
-const { values, caption, note, pointers = {}, active, dimmed = [] } = Astro.props;
+const { values, caption, note, pointers = {}, active = [], dimmed = [] } = Astro.props;
+const activeSet = new Set(typeof active === 'number' ? [active] : active);
 ---
 
 <figure class="vd-figure not-content">
@@ -23,7 +24,7 @@ const { values, caption, note, pointers = {}, active, dimmed = [] } = Astro.prop
 			{values.map((_, i) => <span class="vd-array__idx">{i}</span>)}
 			{
 				values.map((v, i) => (
-					<span class:list={['vd-array__cell', { 'is-active': i === active, 'is-out': dimmed.includes(i) }]}>
+					<span class:list={['vd-array__cell', { 'is-active': activeSet.has(i), 'is-out': dimmed.includes(i) }]}>
 						{v}
 					</span>
 				))

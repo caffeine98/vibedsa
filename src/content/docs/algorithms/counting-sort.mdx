@@ -1,0 +1,78 @@
+---
+title: Counting sort
+description: Sort integers without comparing them. Count each value, then write the values out in order. O(n + k).
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/counting_sort.py?raw';
+
+## What it is
+
+Counting sort never compares two items. It counts how many times each value appears, then writes the values out in order.
+
+It only works when the items are integers in a small range, like ages or exam scores. In that case it runs in O(n + k), where `k` is the size of the range. That's faster than any comparison sort.
+
+## How it works
+
+Sort `[4, 1, 3, 4, 1, 4]`. The values run from 1 to 4, so make one counter for each value from 1 to 4:
+
+<div class="vd-trace">
+
+| value | 1 | 2 | 3 | 4 |
+| --- | --- | --- | --- | --- |
+| count | 2 | 0 | 1 | 3 |
+
+</div>
+
+Then walk the counters in order and write each value as many times as it was counted:
+
+```text
+1 1 3 4 4 4
+```
+
+### Why it beats O(n log n)
+
+Every sort that works by comparing items needs at least about `n log n` comparisons in the worst case. That limit is proven. Counting sort escapes it by not comparing at all. It uses each value directly as an index into the counts array.
+
+The cost is the counts array. Its size depends on the *range* of values, not the number of items.
+
+## Pseudocode
+
+```text title="Pseudocode"
+COUNTING-SORT(A):
+    lo = smallest value in A
+    hi = largest value in A
+    counts = array of (hi - lo + 1) zeros
+    for each x in A:
+        counts[x - lo] = counts[x - lo] + 1
+    result = empty list
+    for v from lo to hi:
+        append v to result, counts[v - lo] times
+    return result
+```
+
+## Python
+
+<Code code={src} lang="python" title="counting_sort.py" />
+
+## Complexity
+
+`n` is the number of items. `k` is the size of the range: `max - min + 1`.
+
+| Case | Time | Why |
+| --- | --- | --- |
+| Best, average, worst | O(n + k) | One pass to count the `n` items, one pass over the `k` counters. |
+
+Space is O(k) for the counters, plus O(n) for the output.
+
+## Gotchas
+
+- **The range matters, not the count.** Sorting `[1, 1000000]` builds a million counters for two items. When `k` is much bigger than `n`, use a normal sort.
+- **Integers only.** It works for anything you can turn into a small integer, like letters with `ord()`. It doesn't work for floats or arbitrary strings.
+- **This version only sorts plain numbers.** It rebuilds values from their counts. To sort records by a key, like people by age, you need the stable version. That version turns the counts into starting positions and places each record in turn.
+
+## In practice
+
+- Use it for small-range integer keys: ages, scores from 0 to 100, ratings, letters `a` to `z`.
+- **Radix sort** sorts larger integers by running a stable counting sort on one digit at a time.
+- `collections.Counter` gives you the counts in one line. `sorted(Counter(items).items())` lists each value with its count in order.
