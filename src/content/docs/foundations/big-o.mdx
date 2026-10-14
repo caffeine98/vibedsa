@@ -1,0 +1,102 @@
+---
+title: Big-O notation
+description: How the work grows as the input grows. The common growth rates, and how to spot them in code.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import src from '../../../../python/dsa/big_o.py?raw';
+
+## What it is
+
+Big-O describes how the work an algorithm does **grows** as its input grows. It ignores constants and small terms, and keeps only the part that dominates for large inputs.
+
+`n` stands for the input size, such as the number of items in a list. O(n) means "the work grows in step with n". Double the input, double the work.
+
+## How it works
+
+Count the steps that repeat as `n` grows. Then simplify with two rules:
+
+1. **Drop constants.** `3n + 5` steps is O(n). At large `n`, the 3 and the 5 don't change the shape of the growth.
+2. **Keep the biggest term.** `n² + n` is O(n²). When `n` is 1,000, `n²` is a million and `n` is a rounding error.
+
+These are the growth rates you'll see most. The third column shows how many steps each needs for 1,000 items.
+
+| Big-O | Name | Steps for n = 1,000 | Example |
+| --- | --- | --- | --- |
+| O(1) | constant | 1 | Read `A[i]` |
+| O(log n) | logarithmic | about 10 | [Binary search](../../algorithms/binary-search/) |
+| O(n) | linear | 1,000 | Scan a list once |
+| O(n log n) | n log n | about 10,000 | Merge sort, Python's `sorted()` |
+| O(n²) | quadratic | 1,000,000 | Compare every pair |
+| O(2ⁿ) | exponential | a 302-digit number | List every subset |
+
+Logs on this site are base 2. `log n` is how many times you can halve `n` before you reach 1.
+
+### Time and space
+
+**Time complexity** counts steps. **Space complexity** counts the extra memory the algorithm needs, not counting the input. A set that grows to `n` items is O(n) space. So is a recursion `n` calls deep, because each call waits on the [call stack](../recursion/).
+
+### Best, worst, average, amortized
+
+One algorithm can have different costs on different inputs. Linear search finds the target on the first try at best, and checks every item at worst.
+
+- **Worst case** is the usual default. It's a promise: the code never does worse.
+- **Average case** is the typical cost over random inputs.
+- **Amortized** is the average cost per operation over a long run. Python's `list.append` sometimes copies the whole list to grow it. That happens so rarely that each append costs O(1) on average.
+
+## Pseudocode
+
+Patterns to spot in code:
+
+```text title="Pseudocode"
+// O(1): no loop over the input
+x = A[0]
+
+// O(n): one loop over the input
+for i from 0 to n - 1:
+    ...
+
+// O(n²): nested loops multiply, n * n
+for i from 0 to n - 1:
+    for j from 0 to n - 1:
+        ...
+
+// O(n): loops one after another add, n + n = 2n, which is O(n)
+for i from 0 to n - 1:
+    ...
+for j from 0 to n - 1:
+    ...
+
+// O(log n): the range halves each step
+while n > 1:
+    n = floor(n / 2)
+```
+
+## Python
+
+One function for each growth rate. The three `has_duplicate` functions answer the same question at three different costs. The faster ones trade memory or a sort for speed.
+
+<Code code={src} lang="python" title="big_o.py" />
+
+## Gotchas
+
+- **Big-O is about growth, not speed.** An O(n²) loop can beat an O(n log n) one on 10 items. Big-O tells you what happens when the input gets large.
+- **Built-ins have costs too.** `x in my_list`, `my_list.pop(0)` and `my_list.insert(0, x)` are all O(n). One of them inside a loop makes the loop O(n²).
+- **Slices copy.** `items[1:]` copies `n - 1` items. Slicing in every recursive call adds an O(n) cost to each call.
+- **Different inputs get different letters.** Looping over a list of size `n` inside a loop over a list of size `m` is O(n · m), not O(n²).
+
+## In practice
+
+The costs of common Python operations:
+
+| Operation | Cost |
+| --- | --- |
+| `a[i]`, `a[i] = x`, `len(a)` | O(1) |
+| `a.append(x)`, `a.pop()` | O(1) amortized |
+| `a.insert(0, x)`, `a.pop(0)` | O(n): every item shifts |
+| `x in a` (list) | O(n) |
+| `x in s` (set), `d[key]` (dict) | O(1) average |
+| `a[i:j]` | O(j − i): the slice is copied |
+| `sorted(a)`, `a.sort()` | O(n log n) |
+
+Rough guide for coding problems: with `n` up to about 10,000, O(n²) is usually fine. With `n` up to a million, aim for O(n log n) or better.

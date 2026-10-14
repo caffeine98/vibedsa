@@ -1,0 +1,123 @@
+---
+title: Recursion
+description: A function that solves a problem by calling itself on a smaller version of it. Base cases, the call stack, and memoization.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import StackFigure from '../../../components/StackFigure.astro';
+import src from '../../../../python/dsa/recursion.py?raw';
+
+## What it is
+
+A recursive function solves a problem by calling itself on a smaller version of the same problem.
+
+Every recursive function needs two parts:
+
+- **Base case.** An input small enough to answer directly, with no further calls.
+- **Recursive case.** Shrink the problem, call the function on the smaller problem, and use that answer.
+
+## How it works
+
+Take `factorial(n) = n * factorial(n - 1)`, with `factorial(1) = 1` as the base case.
+
+Each call gets its own **frame** on the **call stack**. A frame holds that call's own `n`. A call can't finish until the call it made returns, so frames pile up until one reaches the base case:
+
+<StackFigure
+	caption="factorial(3) · the call stack at its deepest"
+	frames={[
+		{ label: 'factorial(3)', note: 'waits for factorial(2)' },
+		{ label: 'factorial(2)', note: 'waits for factorial(1)' },
+		{ label: 'factorial(1)', note: 'base case: returns 1' },
+	]}
+/>
+
+Then the frames return in reverse order, each using the answer from the one above it:
+
+<div class="vd-trace">
+
+| call | returns |
+| --- | --- |
+| factorial(1) | 1, the base case |
+| factorial(2) | 2 * 1 = 2 |
+| factorial(3) | 3 * 2 = 6 |
+
+</div>
+
+### Halving the problem
+
+The smaller problem doesn't have to be `n - 1`. `power(base, exp)` halves the exponent instead: 2¹⁰ = 2⁵ * 2⁵. Compute 2⁵ once and square it. `power(2, 10)` calls itself with exponents 5, 2, 1 and 0. That's 5 calls in total instead of 10, and O(log n) instead of O(n).
+
+### Repeated work
+
+`fib(n) = fib(n - 1) + fib(n - 2)` makes two calls each time. Those calls ask for the same values again and again:
+
+```text title="calls made by fib(4)"
+fib(4)
+├── fib(3)
+│   ├── fib(2)
+│   │   ├── fib(1)
+│   │   └── fib(0)
+│   └── fib(1)
+└── fib(2)          ← computed a second time
+    ├── fib(1)
+    └── fib(0)
+```
+
+`fib(4)` makes 9 calls. `fib(30)` makes 2,692,537.
+
+The fix is **memoization**: save each answer the first time you compute it, and reuse it after that. Then `fib(30)` computes each value from `fib(2)` to `fib(30)` only once.
+
+## Pseudocode
+
+```text title="Pseudocode"
+FACTORIAL(n):
+    if n <= 1:
+        return 1                        // base case
+    return n * FACTORIAL(n - 1)
+
+POWER(base, exp):
+    if exp == 0:
+        return 1                        // base case
+    half = POWER(base, floor(exp / 2))  // one call, not two
+    if exp is even:
+        return half * half
+    return half * half * base
+
+FIB-MEMO(n, memo):
+    if n < 2:
+        return n
+    if n not in memo:
+        memo[n] = FIB-MEMO(n - 1, memo) + FIB-MEMO(n - 2, memo)
+    return memo[n]
+```
+
+## Python
+
+<Code code={src} lang="python" title="recursion.py" />
+
+## Complexity
+
+| Function | Time | Space | Why |
+| --- | --- | --- | --- |
+| `factorial(n)` | O(n) | O(n) | `n` calls, all on the stack at once. |
+| `power(b, e)` | O(log e) | O(log e) | The exponent halves with each call. |
+| `fib(n)` | O(2ⁿ) | O(n) | Each call makes two more. The stack is at most `n` deep. |
+| `fib_memo(n)` | O(n) | O(n) | Each value is computed once, then stored. |
+
+Recursion uses stack space. Even a function with no lists uses O(depth) memory.
+
+O(2ⁿ) is an upper bound for `fib(n)`. The exact growth is about 1.6ⁿ, which is still exponential.
+
+## Gotchas
+
+- **Make sure you reach the base case.** Every call must move toward it. With `if n == 1` as the base case, `factorial(0)` would never stop. `if n <= 1` covers it.
+- **Python stops at about 1,000 calls deep.** Past that it raises `RecursionError`. Python does not optimize tail calls, so recursing over 10,000 items needs a loop instead.
+- **Watch for repeated work.** If the same arguments come up many times, memoize.
+- **Don't slice on every call.** A pattern like `items[0] + total(items[1:])` copies the list each time. That makes it O(n²). Pass an index instead.
+
+## In practice
+
+- `@functools.cache` adds memoization to a function in one line.
+- Any recursion can be rewritten as a loop with your own stack. Do this when the depth can get large.
+- `sys.setrecursionlimit()` raises the limit, but very deep recursion can still crash the Python process. A loop is safer.
+- Recursion is the natural fit for trees, divide and conquer (merge sort, quicksort), and backtracking. Those lessons build on this one.

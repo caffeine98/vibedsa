@@ -1,0 +1,83 @@
+---
+// A stack drawn as frames, newest on top.
+// Example: <StackFigure frames={[{ label: 'f(3)', note: 'waits' }, { label: 'f(2)' }]} />
+interface Frame {
+	label: string;
+	note?: string;
+}
+interface Props {
+	/** bottom first, top last */
+	frames: Frame[];
+	caption?: string;
+	note?: string;
+	/** highlight the top frame */
+	activeTop?: boolean;
+}
+
+const { frames, caption, note, activeTop = true } = Astro.props;
+const topDown = [...frames].reverse();
+---
+
+<figure class="vd-figure not-content">
+	{caption && <figcaption class="vd-figure__head">{caption}</figcaption>}
+	<div class="vd-figure__body">
+		<ol class="vd-stack" reversed>
+			{
+				topDown.map((frame, i) => (
+					<li class:list={['vd-stack__frame', { 'is-active': activeTop && i === 0 }]}>
+						<code>{frame.label}</code>
+						{frame.note && <span class="vd-stack__note">{frame.note}</span>}
+						{i === 0 && <span class="vd-stack__tag">top</span>}
+					</li>
+				))
+			}
+		</ol>
+	</div>
+	{note && <p class="vd-figure__note" set:html={note} />}
+</figure>
+
+<style>
+	.vd-stack {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		max-width: 32rem;
+	}
+	.vd-stack__frame {
+		display: flex;
+		align-items: baseline;
+		gap: 1rem;
+		padding: 0.55rem 0.75rem;
+		border: 1px solid var(--sl-color-gray-4);
+		margin-top: -1px;
+	}
+	.vd-stack__frame code {
+		border: none !important;
+		padding: 0 !important;
+		background: none !important;
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-base);
+		color: var(--sl-color-white);
+	}
+	.vd-stack__note {
+		flex: 1;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+	.vd-stack__tag {
+		margin-inline-start: auto;
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-2xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--vd-mark);
+	}
+	.vd-stack__frame.is-active {
+		background: var(--vd-mark);
+		border-color: var(--vd-mark);
+	}
+	.vd-stack__frame.is-active :is(code, .vd-stack__note, .vd-stack__tag) {
+		color: var(--sl-color-black);
+	}
+</style>
