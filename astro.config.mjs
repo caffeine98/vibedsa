@@ -1,5 +1,6 @@
 // @ts-check
-import { existsSync } from 'node:fs';
+import { existsSync, utimesSync } from 'node:fs';
+import path from 'node:path';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { curriculum } from './src/data/curriculum.mjs';
@@ -19,6 +20,25 @@ const sidebar = [
 		}))
 		.filter((group) => group.items.length > 0),
 ];
+
+// The sidebar is built once, when the config loads. In dev, Astro reloads the config
+// when this file changes, so bump its timestamp whenever a lesson is added or removed.
+const restartOnLessonChange = {
+	name: 'restart-on-lesson-change',
+	hooks: {
+		'astro:server:setup': ({ server }) => {
+			const docsDir = path.resolve('src/content/docs');
+			const onAddOrRemove = (/** @type {string} */ file) => {
+				if (path.resolve(file).startsWith(docsDir) && /\.mdx?$/.test(file)) {
+					const now = new Date();
+					utimesSync(path.resolve('astro.config.mjs'), now, now);
+				}
+			};
+			server.watcher.on('add', onAddOrRemove);
+			server.watcher.on('unlink', onAddOrRemove);
+		},
+	},
+};
 
 export default defineConfig({
 	site: 'https://caffeine98.github.io',
@@ -45,5 +65,6 @@ export default defineConfig({
 			sidebar,
 			lastUpdated: false,
 		}),
+		restartOnLessonChange,
 	],
 });
